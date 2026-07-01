@@ -8,7 +8,7 @@ class AppConfig {
   /// to reach the host machine's localhost.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.31.169:8000',
+    defaultValue: 'https://job-searcher-784v.onrender.com',
   );
 
   static const String apiV1 = '$apiBaseUrl/api/v1';
