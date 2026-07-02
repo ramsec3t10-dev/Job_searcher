@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/job_searcher/EMBEDHUNT_AI/EMBEDHUNT_AI/mobile/linux"
+    "cmake.sourceDirectory": "C:/job_searcher/EMBEDHUNT_AI/EMBEDHUNT_AI/mobile/linux",
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

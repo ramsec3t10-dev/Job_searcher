@@ -31,6 +31,10 @@ async def get_resume(resume_id: str, user_id: str = Depends(get_current_user_id)
 async def get_profile(resume_id: str, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     return await ResumeService(db).get_profile(resume_id, user_id)
 
+@router.get("/{resume_id}/intelligence", summary="ATS score, quality analysis, and optional job tailoring")
+async def get_intelligence(resume_id: str, job_description: str = "", user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+    return await ResumeService(db).get_intelligence(resume_id, user_id, job_description or None)
+
 @router.delete("/{resume_id}", status_code=204, summary="Delete a resume")
 async def delete_resume(resume_id: str, user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     await ResumeService(db).delete_resume(resume_id, user_id)

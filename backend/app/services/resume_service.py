@@ -81,6 +81,17 @@ class ResumeService:
         r = await self.get_resume(resume_id, user_id)
         await self.repo.delete(r)
 
+    async def get_intelligence(self, resume_id: str, user_id: str, job_description: str | None = None) -> dict:
+        from app.ai.resume_intelligence import get_resume_intelligence
+        r = await self.get_resume(resume_id, user_id)
+        if not r.raw_text:
+            raise HTTPException(409, f"Not yet processed. Status: {r.status.value}")
+        analyzer = get_resume_intelligence()
+        report = analyzer.analyze(r.raw_text).to_dict()
+        if job_description:
+            report["tailoring"] = analyzer.tailor_to_job(r.raw_text, job_description)
+        return report
+
     async def set_primary(self, resume_id: str, user_id: str):
         r = await self.get_resume(resume_id, user_id)
         await self.repo.clear_primary(user_id)
