@@ -54,8 +54,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
       canPop: !widget.isMandatory && !_busy,
       child: AlertDialog(
         backgroundColor: AppTheme.card,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.all(24),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -67,8 +66,24 @@ class _UpdateDialogState extends State<UpdateDialog> {
               Text("WHAT'S NEW",
                   style: AppText.label.copyWith(color: AppTheme.textMuted)),
               const SizedBox(height: 6),
-              Text(widget.newVersion.releaseNotes,
-                  style: AppText.body.copyWith(color: AppTheme.textSecondary)),
+              ...widget.newVersion.releaseNotes.map(
+                (note) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.check_circle,
+                          size: 16, color: AppTheme.success),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(note,
+                            style: AppText.body
+                                .copyWith(color: AppTheme.textSecondary)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
             if (_state == _UpdateState.downloading) _downloadProgress(),
             if (_state == _UpdateState.installing) _installing(),
@@ -91,8 +106,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
             color: AppTheme.brand.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.system_update,
-              color: AppTheme.brand, size: 26),
+          child:
+              const Icon(Icons.system_update, color: AppTheme.brand, size: 26),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -101,8 +116,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Update available',
-                  style: AppText.cardTitle
-                      .copyWith(color: AppTheme.textPrimary)),
+                  style:
+                      AppText.cardTitle.copyWith(color: AppTheme.textPrimary)),
               Text('v${widget.newVersion.latestVersion}',
                   style: AppText.caption.copyWith(color: AppTheme.brand)),
             ],
@@ -137,8 +152,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     value: _progress,
                     minHeight: 8,
                     backgroundColor: AppTheme.brand.withValues(alpha: 0.15),
-                    valueColor:
-                        const AlwaysStoppedAnimation(AppTheme.brand),
+                    valueColor: const AlwaysStoppedAnimation(AppTheme.brand),
                   ),
                 ),
               ),
@@ -187,8 +201,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline,
-                color: AppTheme.danger, size: 16),
+            const Icon(Icons.error_outline, color: AppTheme.danger, size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(_error!,
@@ -201,8 +214,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
   }
 
   Widget _actions() {
-    final showLater =
-        !widget.isMandatory && (_state == _UpdateState.idle);
+    final showLater = !widget.isMandatory && (_state == _UpdateState.idle);
     return Row(
       children: [
         if (showLater) ...[
@@ -216,10 +228,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
         ],
         Expanded(
           child: FilledButton(
-            onPressed: (_state == _UpdateState.idle ||
-                    _state == _UpdateState.error)
-                ? _start
-                : null,
+            onPressed:
+                (_state == _UpdateState.idle || _state == _UpdateState.error)
+                    ? _start
+                    : null,
             style: FilledButton.styleFrom(backgroundColor: AppTheme.brand),
             child: Text(
               _state == _UpdateState.error ? 'Retry' : 'Update now',

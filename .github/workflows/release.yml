@@ -117,7 +117,7 @@ jobs:
               \"latest_version\": \"${{ steps.version.outputs.version }}\",
               \"version_code\": ${{ steps.version.outputs.version_code }},
               \"apk_url\": \"${APK_URL}\",
-              \"mandatory\": false,
-              \"release_notes\": \"Update to v${{ steps.version.outputs.version }}. See GitHub for details.\",
-              \"min_supported_version\": \"1.0.0\"
+               \"force_update\": false,
+               \"release_notes\": [\"Update to v${{ steps.version.outputs.version }}\", \"See GitHub release notes for details\"],
+               \"minimum_version\": \"1.0.0\"
             }"

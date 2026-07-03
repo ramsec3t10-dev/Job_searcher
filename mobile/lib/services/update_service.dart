@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:install_plugin/install_plugin.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,28 +13,41 @@ class AppVersion {
   final String latestVersion;
   final int versionCode;
   final String apkUrl;
-  final bool mandatory;
-  final String releaseNotes;
-  final String minSupportedVersion;
+  final bool forceUpdate;
+  final List<String> releaseNotes;
+  final String minimumVersion;
 
   const AppVersion({
     required this.latestVersion,
     required this.versionCode,
     required this.apkUrl,
-    required this.mandatory,
+    required this.forceUpdate,
     required this.releaseNotes,
-    required this.minSupportedVersion,
+    required this.minimumVersion,
   });
 
   factory AppVersion.fromJson(Map<String, dynamic> json) {
     int asInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
+    List<String> asNotes(dynamic v) {
+      if (v is List) {
+        return v
+            .map((e) => e.toString())
+            .where((e) => e.trim().isNotEmpty)
+            .toList();
+      }
+      final note = v?.toString().trim() ?? '';
+      return note.isEmpty ? const [] : [note];
+    }
+
     return AppVersion(
       latestVersion: json['latest_version']?.toString() ?? '0.0.0',
       versionCode: asInt(json['version_code']),
       apkUrl: json['apk_url']?.toString() ?? '',
-      mandatory: json['mandatory'] == true,
-      releaseNotes: json['release_notes']?.toString() ?? '',
-      minSupportedVersion: json['min_supported_version']?.toString() ?? '1.0.0',
+      forceUpdate: json['force_update'] == true || json['mandatory'] == true,
+      releaseNotes: asNotes(json['release_notes']),
+      minimumVersion: (json['minimum_version'] ?? json['min_supported_version'])
+              ?.toString() ??
+          '1.0.0',
     );
   }
 }
@@ -76,13 +89,13 @@ class UpdateService {
       final response = await _dio
           .get('${AppConfig.apiV1}/app/version')
           .timeout(AppConfig.requestTimeout);
-      final server = AppVersion.fromJson(
-          Map<String, dynamic>.from(response.data as Map));
+      final server =
+          AppVersion.fromJson(Map<String, dynamic>.from(response.data as Map));
 
       final hasUpdate = server.versionCode > currentCode;
       final isMandatory = hasUpdate &&
-          (server.mandatory ||
-              _isBefore(info.version, server.minSupportedVersion));
+          (server.forceUpdate ||
+              _isBefore(info.version, server.minimumVersion));
 
       return UpdateStatus(
         hasUpdate: hasUpdate,
@@ -146,7 +159,7 @@ class UpdateService {
 
   /// Launch the Android package installer for a downloaded APK.
   Future<void> installApk(String apkPath) async {
-    await InstallPlugin.installApk(apkPath);
+    await OpenFilex.open(apkPath);
   }
 
   /// Returns true if [current] is semantically before [minimum] (e.g. 1.0.0).

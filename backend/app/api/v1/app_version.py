@@ -36,9 +36,9 @@ class VersionConfig(BaseModel):
     latest_version: str = Field(..., examples=["1.2.0"])
     version_code: int = Field(..., ge=1, examples=[10200])
     apk_url: str = ""
-    mandatory: bool = False
-    release_notes: str = ""
-    min_supported_version: str = "1.0.0"
+    minimum_version: str = "1.0.0"
+    force_update: bool = False
+    release_notes: list[str] = Field(default_factory=list)
     released_at: str = ""
 
 
@@ -47,9 +47,9 @@ def _defaults() -> VersionConfig:
         latest_version=settings.MOBILE_LATEST_VERSION,
         version_code=settings.MOBILE_VERSION_CODE,
         apk_url=settings.MOBILE_APK_URL,
-        mandatory=False,
-        release_notes="",
-        min_supported_version=settings.MOBILE_MIN_SUPPORTED_VERSION,
+        minimum_version=settings.MOBILE_MIN_SUPPORTED_VERSION,
+        force_update=False,
+        release_notes=[],
         released_at="",
     )
 
@@ -57,7 +57,15 @@ def _defaults() -> VersionConfig:
 def _load() -> VersionConfig:
     try:
         if _VERSION_PATH.exists():
-            return VersionConfig(**json.loads(_VERSION_PATH.read_text("utf-8")))
+            raw = json.loads(_VERSION_PATH.read_text("utf-8"))
+            if "minimum_version" not in raw and "min_supported_version" in raw:
+                raw["minimum_version"] = raw.pop("min_supported_version")
+            if "force_update" not in raw and "mandatory" in raw:
+                raw["force_update"] = raw.pop("mandatory")
+            if isinstance(raw.get("release_notes"), str):
+                notes = raw["release_notes"].strip()
+                raw["release_notes"] = [notes] if notes else []
+            return VersionConfig(**raw)
     except (OSError, ValueError, TypeError) as exc:
         logger.warning("mobile_version_read_failed", error=str(exc))
     return _defaults()
@@ -81,9 +89,9 @@ class PublishVersion(BaseModel):
     latest_version: str
     version_code: int = Field(..., ge=1)
     apk_url: str
-    mandatory: bool = False
-    release_notes: str = ""
-    min_supported_version: str = "1.0.0"
+    minimum_version: str = "1.0.0"
+    force_update: bool = False
+    release_notes: list[str] = Field(default_factory=list)
 
 
 @router.post("/version/update", summary="Publish a new mobile version (CI only)")

@@ -45,7 +45,7 @@ class _EmbedHuntAppState extends State<EmbedHuntApp> {
     _toolsService = ToolsService(_api);
 
     // Check shortly after launch, then every 30 minutes while open.
-    Future.delayed(const Duration(seconds: 3), _checkForUpdate);
+    Future.delayed(const Duration(milliseconds: 700), _checkForUpdate);
     _updateTimer =
         Timer.periodic(const Duration(minutes: 30), (_) => _checkForUpdate());
   }
@@ -54,7 +54,10 @@ class _EmbedHuntAppState extends State<EmbedHuntApp> {
     if (_dialogOpen) return;
     final status = await _updateService.checkForUpdate();
     final ctx = _navigatorKey.currentContext;
-    if (!mounted || ctx == null || !status.hasUpdate || status.newVersion == null) {
+    if (!mounted ||
+        ctx == null ||
+        !status.hasUpdate ||
+        status.newVersion == null) {
       return;
     }
     _dialogOpen = true;
