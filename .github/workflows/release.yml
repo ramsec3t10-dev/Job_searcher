@@ -77,3 +77,21 @@ jobs:
           name: EMBEDHUNT AI v${{ steps.version.outputs.version }}
           generate_release_notes: true
           files: mobile/dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+
+      - name: Publish version to backend
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          UPDATE_SECRET: ${{ secrets.BACKEND_UPDATE_SECRET }}
+          APK_URL: https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/embedhunt-v${{ steps.version.outputs.version }}.apk
+        run: |
+          curl --fail -X POST "$BACKEND_URL/api/v1/app/version/update" \
+            -H "Content-Type: application/json" \
+            -H "X-Update-Secret: $UPDATE_SECRET" \
+            -d "{
+              \"latest_version\":\"${{ steps.version.outputs.version }}\",
+              \"version_code\":${{ steps.version.outputs.version_code }},
+              \"apk_url\":\"$APK_URL\",
+              \"minimum_version\":\"1.0.0\",
+              \"force_update\":false,
+              \"release_notes\":[\"Update to v${{ steps.version.outputs.version }}\"]
+            }"
