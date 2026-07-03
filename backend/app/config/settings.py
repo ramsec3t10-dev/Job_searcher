@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     CHROMA_HOST: str = "localhost"
     CHROMA_PORT: int = 8001
 
+    # ── AI Career Mentor (Module 15) ────────────────────────────────────────
+    # Optional LLM backend. When no key is set the mentor falls back to a
+    # deterministic, CareerTwin-grounded advisor so the feature always works.
+    ANTHROPIC_API_KEY: Optional[str] = None
+    MENTOR_MODEL: str = "claude-3-5-sonnet-latest"
+    MENTOR_MAX_TOKENS: int = 700
+
     SMTP_HOST: Optional[str] = None
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None
@@ -65,6 +72,19 @@ class Settings(BaseSettings):
     FEATURE_AUTO_APPLY: bool = False
     FEATURE_AI_MATCHING: bool = True
     FEATURE_INTERVIEW_GEN: bool = True
+
+    # ── Mobile in-app update channel ────────────────────────────────────────
+    # Secret required to POST a new version to /api/v1/app/version/update.
+    # Set this in the environment; CI uses it to publish new releases.
+    APP_UPDATE_SECRET: str = "change-me-mobile-update-secret"
+    # Where the current published mobile version config is persisted. The file
+    # is written by CI after a successful release and read by every app.
+    MOBILE_VERSION_FILE: str = "mobile_version.json"
+    # Fallback / initial values served before CI has published anything.
+    MOBILE_LATEST_VERSION: str = "1.0.0"
+    MOBILE_VERSION_CODE: int = 10000
+    MOBILE_APK_URL: str = ""
+    MOBILE_MIN_SUPPORTED_VERSION: str = "1.0.0"
 
     @property
     def is_production(self) -> bool: return self.APP_ENV == "production"

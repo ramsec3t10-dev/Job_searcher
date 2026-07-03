@@ -1,0 +1,168 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:install_plugin/install_plugin.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../config.dart';
+
+/// A published mobile version, as returned by `GET /api/v1/app/version`.
+class AppVersion {
+  final String latestVersion;
+  final int versionCode;
+  final String apkUrl;
+  final bool mandatory;
+  final String releaseNotes;
+  final String minSupportedVersion;
+
+  const AppVersion({
+    required this.latestVersion,
+    required this.versionCode,
+    required this.apkUrl,
+    required this.mandatory,
+    required this.releaseNotes,
+    required this.minSupportedVersion,
+  });
+
+  factory AppVersion.fromJson(Map<String, dynamic> json) {
+    int asInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
+    return AppVersion(
+      latestVersion: json['latest_version']?.toString() ?? '0.0.0',
+      versionCode: asInt(json['version_code']),
+      apkUrl: json['apk_url']?.toString() ?? '',
+      mandatory: json['mandatory'] == true,
+      releaseNotes: json['release_notes']?.toString() ?? '',
+      minSupportedVersion: json['min_supported_version']?.toString() ?? '1.0.0',
+    );
+  }
+}
+
+/// Result of an update check.
+class UpdateStatus {
+  final bool hasUpdate;
+  final bool isMandatory;
+  final AppVersion? newVersion;
+  final String currentVersion;
+
+  const UpdateStatus({
+    required this.hasUpdate,
+    required this.isMandatory,
+    required this.currentVersion,
+    this.newVersion,
+  });
+
+  static const none = UpdateStatus(
+    hasUpdate: false,
+    isMandatory: false,
+    currentVersion: 'unknown',
+  );
+}
+
+/// Checks for, downloads and installs new APK builds. Never throws to the UI —
+/// on any failure it degrades gracefully to "no update".
+class UpdateService {
+  UpdateService({Dio? dio}) : _dio = dio ?? Dio();
+
+  final Dio _dio;
+
+  /// Compare the installed build against the server. Safe to call anytime.
+  Future<UpdateStatus> checkForUpdate() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final currentCode = int.tryParse(info.buildNumber) ?? 0;
+
+      final response = await _dio
+          .get('${AppConfig.apiV1}/app/version')
+          .timeout(AppConfig.requestTimeout);
+      final server = AppVersion.fromJson(
+          Map<String, dynamic>.from(response.data as Map));
+
+      final hasUpdate = server.versionCode > currentCode;
+      final isMandatory = hasUpdate &&
+          (server.mandatory ||
+              _isBefore(info.version, server.minSupportedVersion));
+
+      return UpdateStatus(
+        hasUpdate: hasUpdate,
+        isMandatory: isMandatory,
+        newVersion: hasUpdate ? server : null,
+        currentVersion: info.version,
+      );
+    } catch (_) {
+      // Network/parse error — never disrupt the user.
+      return UpdateStatus.none;
+    }
+  }
+
+  /// Download the APK, reporting progress 0.0–1.0. Returns the file path or
+  /// null on failure (with a human message via [onError]).
+  Future<String?> downloadApk({
+    required String apkUrl,
+    required void Function(double progress) onProgress,
+    required void Function(String error) onError,
+  }) async {
+    if (apkUrl.isEmpty) {
+      onError('No download URL is available for this release.');
+      return null;
+    }
+
+    if (Platform.isAndroid) {
+      final granted = await Permission.requestInstallPackages.request();
+      if (!granted.isGranted) {
+        onError('Permission to install apps was denied. '
+            'Enable it in Settings to update.');
+        return null;
+      }
+    }
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final apkPath = '${dir.path}/embedhunt_update.apk';
+
+      await _dio.download(
+        apkUrl,
+        apkPath,
+        onReceiveProgress: (received, total) {
+          if (total > 0) onProgress(received / total);
+        },
+        options: Options(
+          receiveTimeout: const Duration(minutes: 10),
+          followRedirects: true,
+          headers: const {'Accept': 'application/vnd.android.package-archive'},
+        ),
+      );
+      return apkPath;
+    } on DioException catch (e) {
+      onError('Download failed: ${e.message ?? 'network error'}. '
+          'Please try again.');
+      return null;
+    } catch (e) {
+      onError('Download failed. Please try again.');
+      return null;
+    }
+  }
+
+  /// Launch the Android package installer for a downloaded APK.
+  Future<void> installApk(String apkPath) async {
+    await InstallPlugin.installApk(apkPath);
+  }
+
+  /// Returns true if [current] is semantically before [minimum] (e.g. 1.0.0).
+  bool _isBefore(String current, String minimum) {
+    List<int> parts(String v) => v
+        .split('.')
+        .map((p) => int.tryParse(p.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0)
+        .toList();
+    final c = parts(current);
+    final m = parts(minimum);
+    for (var i = 0; i < 3; i++) {
+      final cv = i < c.length ? c[i] : 0;
+      final mv = i < m.length ? m[i] : 0;
+      if (cv < mv) return true;
+      if (cv > mv) return false;
+    }
+    return false;
+  }
+}

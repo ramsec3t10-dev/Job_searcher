@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
-import 'dashboard_screen.dart';
+import 'home_shell.dart';
 import 'login_screen.dart';
 
 /// Decides where to route based on restored auth state.
@@ -26,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
     await auth.bootstrap();
     if (!mounted) return;
     final target = auth.status == AuthStatus.authenticated
-        ? const DashboardScreen()
+        ? const HomeShell()
         : const LoginScreen();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => target),
