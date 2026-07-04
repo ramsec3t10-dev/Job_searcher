@@ -17,7 +17,7 @@ jobs:
         working-directory: mobile
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -32,68 +32,103 @@ jobs:
           channel: stable
           cache: true
 
-    
-      - name: Decode Android keystore
+      ####################################################################
+      # CREATE RELEASE KEYSTORE
+      ####################################################################
+
+      - name: Decode Android Keystore
+        shell: bash
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/upload-keystore.jks
 
       - name: Create key.properties
+        shell: bash
         run: |
-          cat > android/key.properties <<EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=../upload-keystore.jks          
-          EOF
+          printf "storePassword=%s\n" "${{ secrets.ANDROID_STORE_PASSWORD }}" > android/key.properties
+          printf "keyPassword=%s\n" "${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          printf "keyAlias=%s\n" "${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
-      - name: Verify signing files
+      ####################################################################
+      # VERIFY SIGNING FILES
+      ####################################################################
+
+      - name: Verify Signing Configuration
+        shell: bash
         run: |
-          echo "===== key.properties ====="
-          cat android/key.properties
+          echo "========================"
+          echo "ANDROID DIRECTORY"
+          echo "========================"
+          ls -lah android
 
-          echo "===== android folder ====="
-          ls -la android
+          echo
+          echo "========================"
+          echo "KEY.PROPERTIES"
+          echo "========================"
+          cat -A android/key.properties
 
-          echo "===== android/app folder ====="
-          ls -la android/app
+          echo
+          echo "========================"
+          echo "KEYSTORE"
+          echo "========================"
+          ls -lah android/upload-keystore.jks
 
-      - name: Extract version
+      ####################################################################
+      # VERSION
+      ####################################################################
+
+      - name: Extract Version
         id: version
         shell: bash
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
+
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
           VERSION_CODE=$((MAJOR*10000 + MINOR*100 + PATCH))
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
 
-      - name: Update pubspec version
+      - name: Update pubspec Version
+        shell: bash
         run: |
           sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}+${{ steps.version.outputs.version_code }}/" pubspec.yaml
 
-      - name: Install packages
+      ####################################################################
+      # FLUTTER
+      ####################################################################
+
+      - name: Flutter Pub Get
         run: flutter pub get
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Run tests
+      - name: Run Tests
         run: flutter test
 
-      - name: Build APK
+      ####################################################################
+      # BUILD APK
+      ####################################################################
+
+      - name: Build Release APK
         run: |
-          flutter build apk --release \
+          flutter build apk \
+            --release \
             --build-name=${{ steps.version.outputs.version }} \
             --build-number=${{ steps.version.outputs.version_code }}
 
-      - name: Prepare release artifact
+      ####################################################################
+      # RELEASE
+      ####################################################################
+
+      - name: Prepare Artifact
         run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk \
-          dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+            dist/embedhunt-v${{ steps.version.outputs.version }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -103,11 +138,16 @@ jobs:
           generate_release_notes: true
           files: dist/embedhunt-v${{ steps.version.outputs.version }}.apk
 
-      - name: Publish version to backend
+      ####################################################################
+      # UPDATE BACKEND
+      ####################################################################
+
+      - name: Publish Version To Backend
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           UPDATE_SECRET: ${{ secrets.BACKEND_UPDATE_SECRET }}
           APK_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/embedhunt-v${{ steps.version.outputs.version }}.apk
+
         run: |
           curl --fail -X POST "$BACKEND_URL/api/v1/app/version/update" \
             -H "Content-Type: application/json" \
