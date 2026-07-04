@@ -134,8 +134,8 @@ class UpdateService {
     }
   }
 
-  /// Download the APK, reporting progress 0.0–1.0. Returns the file path or
-  /// null on failure (with a human message via [onError]).
+  /// Download the APK, reporting progress 0.0–1.0.
+  /// Returns the downloaded file path or null on failure.
   Future<String?> downloadApk({
     required String apkUrl,
     required void Function(double progress) onProgress,
@@ -149,35 +149,76 @@ class UpdateService {
     if (Platform.isAndroid) {
       final granted = await Permission.requestInstallPackages.request();
       if (!granted.isGranted) {
-        onError('Permission to install apps was denied. '
-            'Enable it in Settings to update.');
+        onError(
+          'Permission to install apps was denied. Enable it in Settings to update.',
+        );
         return null;
       }
     }
 
     try {
+      print("==========================================");
+      print("APK DOWNLOAD START");
+      print("URL : $apkUrl");
+
       final dir = await getTemporaryDirectory();
       final apkPath = '${dir.path}/embedhunt_update.apk';
 
-      await _dio.download(
+      print("Save Path : $apkPath");
+
+      final dio = Dio(
+        BaseOptions(
+          followRedirects: true,
+          maxRedirects: 10,
+          receiveTimeout: const Duration(minutes: 10),
+        ),
+      );
+
+      await dio.download(
         apkUrl,
         apkPath,
         onReceiveProgress: (received, total) {
-          if (total > 0) onProgress(received / total);
+          if (total > 0) {
+            final progress = received / total;
+            print(
+                "Download Progress : ${(progress * 100).toStringAsFixed(1)}%");
+            onProgress(progress);
+          }
         },
         options: Options(
-          receiveTimeout: const Duration(minutes: 10),
-          followRedirects: true,
-          headers: const {'Accept': 'application/vnd.android.package-archive'},
+          headers: const {
+            "Accept": "application/octet-stream",
+          },
         ),
       );
+
+      print("APK DOWNLOADED SUCCESSFULLY");
+      print("Saved To : $apkPath");
+      print("==========================================");
+
       return apkPath;
     } on DioException catch (e) {
-      onError('Download failed: ${e.message ?? 'network error'}. '
-          'Please try again.');
+      print("==========================================");
+      print("DIO DOWNLOAD ERROR");
+      print("Status Code : ${e.response?.statusCode}");
+      print("Request URL : ${e.requestOptions.uri}");
+      print("Real URI    : ${e.response?.realUri}");
+      print("Headers     : ${e.response?.headers}");
+      print("Response    : ${e.response?.data}");
+      print("Message     : ${e.message}");
+      print("Error       : ${e.error}");
+      print("==========================================");
+
+      onError(e.toString());
       return null;
-    } catch (e) {
-      onError('Download failed. Please try again.');
+    } catch (e, s) {
+      print("==========================================");
+      print("UNKNOWN DOWNLOAD ERROR");
+      print(e);
+      print(s);
+      print("==========================================");
+
+      onError(e.toString());
       return null;
     }
   }
