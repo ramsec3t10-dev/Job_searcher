@@ -86,16 +86,36 @@ class UpdateService {
       final info = await PackageInfo.fromPlatform();
       final currentCode = int.tryParse(info.buildNumber) ?? 0;
 
+      print("==========================================");
+      print("EMBEDHUNT UPDATE DEBUG");
+      print("Current Version : ${info.version}");
+      print("Current Build   : $currentCode");
+      print("API URL         : ${AppConfig.apiV1}/app/version");
+
       final response = await _dio
           .get('${AppConfig.apiV1}/app/version')
           .timeout(AppConfig.requestTimeout);
+
+      print("Raw Response    : ${response.data}");
+
       final server =
           AppVersion.fromJson(Map<String, dynamic>.from(response.data as Map));
 
+      print("Server Version  : ${server.latestVersion}");
+      print("Server Build    : ${server.versionCode}");
+      print("APK URL         : ${server.apkUrl}");
+      print("Force Update    : ${server.forceUpdate}");
+
       final hasUpdate = server.versionCode > currentCode;
+
+      print("Has Update      : $hasUpdate");
+
       final isMandatory = hasUpdate &&
           (server.forceUpdate ||
               _isBefore(info.version, server.minimumVersion));
+
+      print("Mandatory       : $isMandatory");
+      print("==========================================");
 
       return UpdateStatus(
         hasUpdate: hasUpdate,
@@ -103,8 +123,13 @@ class UpdateService {
         newVersion: hasUpdate ? server : null,
         currentVersion: info.version,
       );
-    } catch (_) {
-      // Network/parse error — never disrupt the user.
+    } catch (e, s) {
+      print("==========================================");
+      print("UPDATE CHECK FAILED");
+      print(e);
+      print(s);
+      print("==========================================");
+
       return UpdateStatus.none;
     }
   }
