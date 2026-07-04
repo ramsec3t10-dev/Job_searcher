@@ -17,14 +17,26 @@ jobs:
         working-directory: mobile
 
     steps:
+      ####################################################################
+      # CHECKOUT
+      ####################################################################
+
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      ####################################################################
+      # JAVA
+      ####################################################################
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+
+      ####################################################################
+      # FLUTTER
+      ####################################################################
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -33,7 +45,7 @@ jobs:
           cache: true
 
       ####################################################################
-      # CREATE RELEASE KEYSTORE
+      # ANDROID SIGNING
       ####################################################################
 
       - name: Decode Android Keystore
@@ -49,27 +61,21 @@ jobs:
           printf "keyAlias=%s\n" "${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
 
       ####################################################################
-      # VERIFY SIGNING FILES
+      # VERIFY SIGNING
       ####################################################################
 
       - name: Verify Signing Configuration
         shell: bash
         run: |
-          echo "========================"
-          echo "ANDROID DIRECTORY"
-          echo "========================"
+          echo "===== android ====="
           ls -lah android
 
           echo
-          echo "========================"
-          echo "KEY.PROPERTIES"
-          echo "========================"
+          echo "===== key.properties ====="
           cat -A android/key.properties
 
           echo
-          echo "========================"
-          echo "KEYSTORE"
-          echo "========================"
+          echo "===== keystore ====="
           ls -lah android/upload-keystore.jks
 
       ####################################################################
@@ -97,7 +103,7 @@ jobs:
           sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}+${{ steps.version.outputs.version_code }}/" pubspec.yaml
 
       ####################################################################
-      # FLUTTER
+      # DEPENDENCIES
       ####################################################################
 
       - name: Flutter Pub Get
@@ -110,10 +116,11 @@ jobs:
         run: flutter test
 
       ####################################################################
-      # BUILD APK
+      # BUILD
       ####################################################################
 
       - name: Build Release APK
+        shell: bash
         run: |
           flutter build apk \
             --release \
@@ -121,14 +128,31 @@ jobs:
             --build-number=${{ steps.version.outputs.version_code }}
 
       ####################################################################
-      # RELEASE
+      # PREPARE ARTIFACT
       ####################################################################
 
       - name: Prepare Artifact
+        shell: bash
         run: |
           mkdir -p dist
+
           cp build/app/outputs/flutter-apk/app-release.apk \
-            dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+             dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+
+      - name: Verify Artifact
+        shell: bash
+        run: |
+          echo "===== DIST ====="
+
+          ls -lah dist
+
+          test -f dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+
+          echo "APK verified."
+
+      ####################################################################
+      # GITHUB RELEASE
+      ####################################################################
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -136,10 +160,22 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: EMBEDHUNT AI v${{ steps.version.outputs.version }}
           generate_release_notes: true
-          files: dist/embedhunt-v${{ steps.version.outputs.version }}.apk
+          files: |
+            mobile/dist/embedhunt-v${{ steps.version.outputs.version }}.apk
 
       ####################################################################
-      # UPDATE BACKEND
+      # VERIFY AFTER RELEASE
+      ####################################################################
+
+      - name: Verify Release Artifact
+        shell: bash
+        run: |
+          echo "Release upload step finished."
+
+          ls -lah dist
+
+      ####################################################################
+      # BACKEND UPDATE
       ####################################################################
 
       - name: Publish Version To Backend
@@ -148,13 +184,15 @@ jobs:
           UPDATE_SECRET: ${{ secrets.BACKEND_UPDATE_SECRET }}
           APK_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/embedhunt-v${{ steps.version.outputs.version }}.apk
 
+        shell: bash
         run: |
-          curl --fail -X POST "$BACKEND_URL/api/v1/app/version/update" \
+          curl --fail \
+            -X POST "$BACKEND_URL/api/v1/app/version/update" \
             -H "Content-Type: application/json" \
             -H "X-Update-Secret: $UPDATE_SECRET" \
             -d "{
               \"latest_version\":\"${{ steps.version.outputs.version }}\",
-              \"version_code\":${{ steps.version.outputs.version_code }},
+              \"version_code\":${{ steps.version.outputs.version_code}},
               \"apk_url\":\"$APK_URL\",
               \"minimum_version\":\"1.0.0\",
               \"force_update\":false,
