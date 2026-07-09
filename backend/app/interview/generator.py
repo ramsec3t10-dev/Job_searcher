@@ -1,6 +1,11 @@
 """EMBEDHUNT AI — Interview Question Generator"""
+import asyncio
 from dataclasses import dataclass, field
+from app.config.logging import get_logger
+from app.config.settings import settings
 from app.interview.question_bank import get_questions_for_skills, get_all_questions_flat
+
+logger = get_logger(__name__)
 
 @dataclass
 class InterviewKit:
@@ -53,3 +58,50 @@ def generate_interview_kit(job_title: str, company: str, matched_skills: list[st
         checklist=INTERVIEW_CHECKLIST, total_questions=len(all_questions),
         preparation_summary=summary,
     )
+
+
+async def generate_interview_kit_ai(
+    job_title: str, company: str, matched_skills: list[str], match_score: int,
+    *, db, user_id: str,
+) -> InterviewKit:
+    """Static ``generate_interview_kit`` enriched with company-specific AI questions.
+
+    AI-generated questions are prepended to the static bank (AI first, then
+    static). The kit shape is unchanged. Any failure or the master toggle being
+    off returns the static kit unchanged.
+    """
+    kit = generate_interview_kit(job_title, company, matched_skills, match_score)
+    if not settings.LLM_ENRICHMENT_ENABLED:
+        logger.info("interview_generator_path", path="fallback", reason="disabled")
+        return kit
+    skill = matched_skills[0] if matched_skills else "embedded"
+    try:
+        from app.agents.interview_agent import InterviewAgent
+
+        ai_questions = await asyncio.wait_for(
+            InterviewAgent(db).generate_questions(
+                user_id, skill, company, difficulty="medium",
+            ),
+            timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+        )
+        converted = [
+            {
+                "q": q.text,
+                "type": q.type or "core",
+                "difficulty": q.difficulty or "medium",
+                "expected": q.expected_answer_outline,
+                "skill": skill,
+                "source": "ai",
+            }
+            for q in ai_questions if q.text
+        ]
+        if converted:
+            existing = kit.questions_by_skill.get(skill, [])
+            kit.questions_by_skill[skill] = converted + existing
+            kit.all_questions = converted + kit.all_questions
+            kit.total_questions = len(kit.all_questions)
+        logger.info("interview_generator_path", path="ai_enriched", ai_questions=len(converted))
+    except Exception as e:  # noqa: BLE001 — enrichment must never break the endpoint
+        logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+        return kit
+    return kit

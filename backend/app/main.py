@@ -9,6 +9,7 @@ from app.config.settings import settings
 from app.config.logging import setup_logging, get_logger, set_correlation_id
 from app.core.lifecycle import lifespan
 from app.api.router import api_router
+from app.api.v1.ai_features import AIUnavailableError
 
 
 setup_logging()
@@ -45,6 +46,18 @@ async def correlation_middleware(request: Request, call_next):
 async def validation_handler(request, exc):
     errors = [{"field": ".".join(str(l) for l in e["loc"][1:]), "message": e["msg"]} for e in exc.errors()]
     return JSONResponse(status_code=422, content={"success": False, "error": "Validation Error", "details": errors})
+
+@app.exception_handler(AIUnavailableError)
+async def ai_unavailable_handler(request, exc: AIUnavailableError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": exc.error,
+            "message": exc.message,
+            "fallback_available": exc.fallback_available,
+        },
+    )
 
 @app.exception_handler(Exception)
 async def generic_handler(request, exc):

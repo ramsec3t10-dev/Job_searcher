@@ -6,7 +6,13 @@ deterministic — no external calls — so it is fully unit-testable.
 """
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
+
+from app.config.logging import get_logger
+from app.config.settings import settings
+
+logger = get_logger(__name__)
 
 # Per-skill annual premium (LPA) commanded in the Indian embedded market.
 SKILL_PREMIUM_LPA: dict[str, float] = {
@@ -60,6 +66,8 @@ class SalaryIntelligence:
     salary_projection_1yr: float = 0.0
     salary_projection_3yr: float = 0.0
     breakdown: dict = field(default_factory=dict)
+    negotiation_tips: list[str] = field(default_factory=list)
+    market_reasoning: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -74,6 +82,8 @@ class SalaryIntelligence:
             "salary_projection_1yr_lpa": round(self.salary_projection_1yr, 1),
             "salary_projection_3yr_lpa": round(self.salary_projection_3yr, 1),
             "breakdown": self.breakdown,
+            "negotiation_tips": self.negotiation_tips,
+            "market_reasoning": self.market_reasoning,
         }
 
 
@@ -161,6 +171,52 @@ class SalaryIntelligenceEngine:
                 "location_factor": round(loc, 2),
             },
         )
+
+    async def compute_ai(
+        self,
+        *,
+        years_experience: float,
+        skill_names: list[str],
+        domains: list[str],
+        locations: list[str],
+        current_salary_lpa: float,
+        dream_companies: list[str],
+        db,
+        user_id: str,
+        target_company: str | None = None,
+    ) -> SalaryIntelligence:
+        """Formula-based ``compute`` enriched with AI negotiation guidance.
+
+        The base figures (min/max/percentile/projections) stay 100% deterministic.
+        On success the AI adds ``negotiation_tips`` and ``market_reasoning`` to the
+        same response object. Any failure or the toggle being off returns the base
+        estimate unchanged.
+        """
+        base = self.compute(
+            years_experience=years_experience,
+            skill_names=skill_names,
+            domains=domains,
+            locations=locations,
+            current_salary_lpa=current_salary_lpa,
+            dream_companies=dream_companies,
+        )
+        if not settings.LLM_ENRICHMENT_ENABLED:
+            logger.info("salary_intelligence_path", path="fallback", reason="disabled")
+            return base
+        try:
+            from app.agents.salary_agent import SalaryAgent
+
+            ai = await asyncio.wait_for(
+                SalaryAgent(db).estimate(user_id, target_company),
+                timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+            )
+            base.negotiation_tips = list(ai.negotiation_tips or [])
+            base.market_reasoning = ai.market_reasoning or ""
+            logger.info("salary_intelligence_path", path="ai_enriched")
+        except Exception as e:  # noqa: BLE001 — enrichment must never break the endpoint
+            logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+            return base
+        return base
 
     def _for_company(self, company: str, est_min: float, est_max: float) -> dict:
         factor = COMPANY_FACTOR.get(company.strip().lower(), 1.0)

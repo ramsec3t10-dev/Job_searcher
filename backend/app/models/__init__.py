@@ -12,7 +12,8 @@ from app.models.discovered_job import DiscoveredJob
 from app.models.feedback import FeedbackEvent, FeedbackType
 from app.models.daily_checkin import DailyCheckin
 from app.models.app_version import AppVersion
+from app.models.memory import MemoryEntry
 __all__ = ["User","Resume","ResumeStatus","CandidateProfile","Application","ApplicationStatus",
            "ApplicationOutcome","JobRecommendation","MatchTier","Company","Notification",
            "NotificationType","NotificationChannel","LearningRoadmap","InterviewSession","CareerTwin",
-           "DiscoveredJob","FeedbackEvent","FeedbackType","DailyCheckin","AppVersion"]
+           "DiscoveredJob","FeedbackEvent","FeedbackType","DailyCheckin","AppVersion","MemoryEntry"]

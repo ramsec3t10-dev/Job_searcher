@@ -55,6 +55,21 @@ class Settings(BaseSettings):
     MENTOR_MODEL: str = "claude-3-5-sonnet-latest"
     MENTOR_MAX_TOKENS: int = 700
 
+    # ── LLM Foundation (AWS Bedrock / Anthropic) ────────────────────────────
+    # Optional API credentials; when unset the app still starts and the LLM
+    # layer stays dormant until wired in. Model routing is configured here so
+    # the routing table is data-driven, not hardcoded in the selector.
+    BEDROCK_API_KEY: Optional[str] = None
+    AWS_REGION: str = "us-east-1"
+    LLM_CACHE_TTL_SECONDS: int = 3600
+    LLM_MAX_MONTHLY_COST_USD: float = 2.0
+    LLM_HAIKU_MODEL: str = "claude-haiku-4-5"
+    LLM_SONNET_MODEL: str = "claude-sonnet-4-6"
+    LLM_OPUS_MODEL: str = "claude-opus-4-8"
+
+    LLM_ENRICHMENT_ENABLED: bool = True  # master toggle for all AI enrichment
+    LLM_ENRICHMENT_TIMEOUT_SECONDS: int = 10  # if AI takes longer, use fallback
+
     SMTP_HOST: Optional[str] = None
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None

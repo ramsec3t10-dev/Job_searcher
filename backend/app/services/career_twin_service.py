@@ -233,6 +233,84 @@ class CareerTwinService:
             },
         }
 
+    # ── Phase 3 aliases / long-term memory helpers ────────────────────────
+    async def init_from_resume(self, user_id: str, resume_id: str) -> CareerTwin:
+        """Public alias for :meth:`create_from_resume`."""
+        return await self.create_from_resume(user_id, resume_id)
+
+    async def get_or_create(self, user_id: str) -> CareerTwin:
+        """Return the user's twin, creating a minimal empty one if absent."""
+        twin = await self.repo.get_by_user(user_id)
+        if twin:
+            return twin
+        now = _now()
+        twin = await self.repo.create(user_id=user_id, last_synced_at=now, change_log={"identity": now})
+        await self.db.flush()
+        return twin
+
+    async def recompute_scores(self, user_id: str) -> CareerTwin:
+        """Public alias for :meth:`compute_all_scores`."""
+        return await self.compute_all_scores(user_id)
+
+    async def get_summary(self, user_id: str) -> dict:
+        """Public alias for :meth:`get_twin_summary`."""
+        return await self.get_twin_summary(user_id)
+
+    async def update_after_interview(self, user_id: str, interview_result: dict) -> CareerTwin:
+        """Record an interview and refresh interview aggregates on the twin."""
+        twin = await self.add_interview_result(user_id, interview_result)
+
+        history = [dict(h) for h in (twin.interview_history or [])]
+        if history and interview_result.get("score") is not None:
+            history[-1]["score"] = interview_result["score"]
+        twin.interview_history = history
+        twin.interviews_completed = len(history)
+
+        scores = [
+            float(h["score"]) for h in history
+            if isinstance(h, dict) and h.get("score") is not None
+        ]
+        twin.avg_interview_score = round(sum(scores) / len(scores), 2) if scores else 0.0
+
+        weak = list(twin.weak_interview_topics or [])
+        for t in interview_result.get("weak_topics", []) or []:
+            if t not in weak:
+                weak.append(t)
+        twin.weak_interview_topics = weak
+
+        self._touch(twin, "interview")
+        await self.db.flush()
+        return twin
+
+    async def update_after_learning(self, user_id: str, skill: str, session_result: dict) -> CareerTwin:
+        """Record a completed learning session: skill, streak, monthly log."""
+        twin = await self.mark_skill_learned(user_id, skill)
+
+        today = datetime.now(timezone.utc).date()
+        last = twin.last_active_date
+        last_date = None
+        if last:
+            try:
+                last_date = datetime.fromisoformat(last).date()
+            except ValueError:
+                last_date = None
+        if last_date == today:
+            pass  # already active today; streak unchanged
+        elif last_date == today - timedelta(days=1):
+            twin.learning_streak_days = (twin.learning_streak_days or 0) + 1
+        else:
+            twin.learning_streak_days = 1
+        twin.last_active_date = today.isoformat()
+
+        month_key = today.strftime("%Y-%m")
+        learned = [e for e in (twin.skills_learned_this_month or []) if e.get("date", "").startswith(month_key)]
+        learned.append({"skill": skill, "date": today.isoformat(), "score": session_result.get("score")})
+        twin.skills_learned_this_month = learned
+
+        self._touch(twin, "learning")
+        await self.db.flush()
+        return twin
+
     # ── Serialization ─────────────────────────────────────────────────────
     def to_dict(self, twin: CareerTwin) -> dict:
         return {

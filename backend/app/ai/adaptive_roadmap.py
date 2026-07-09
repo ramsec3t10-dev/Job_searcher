@@ -8,8 +8,11 @@ milestones. Progress-aware: skills the twin already holds confidently are droppe
 """
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 
+from app.config.logging import get_logger
+from app.config.settings import settings
 from app.roadmap.planner import (
     DEFAULT_HOURS,
     DEFAULT_RESOURCES,
@@ -17,6 +20,8 @@ from app.roadmap.planner import (
     SKILL_RESOURCES,
     SkillLevel,
 )
+
+logger = get_logger(__name__)
 
 _CONFIDENT = 0.6  # confidence at/above which a skill counts as "have"
 
@@ -56,6 +61,7 @@ class AdaptiveRoadmap:
     milestones: list[dict] = field(default_factory=list)
     tasks: list[AdaptiveTask] = field(default_factory=list)
     summary: str = ""
+    ai_weekly_plan: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -69,6 +75,7 @@ class AdaptiveRoadmap:
             "milestones": self.milestones,
             "tasks": [t.to_dict() for t in self.tasks],
             "summary": self.summary,
+            "ai_weekly_plan": self.ai_weekly_plan,
         }
 
 
@@ -138,6 +145,59 @@ class AdaptiveRoadmapEngine:
             total_hours=total_hours, total_weeks=total_weeks, hours_per_week=hours_per_week,
             immediate_actions=immediate, milestones=milestones, tasks=items, summary=summary,
         )
+
+    async def build_ai(self, *, skill_confidence: dict[str, float], target_skills: list[str],
+                       current_score: int, job_title: str, db, user_id: str,
+                       affinities: dict[str, float] | None = None,
+                       demand: dict[str, int] | None = None,
+                       hours_per_week: int = 10) -> AdaptiveRoadmap:
+        """Deterministic ``build`` enriched with an AI weekly study plan.
+
+        The dependency ordering, scheduling, and — critically — the score
+        projection all remain the deterministic engine's output (never the AI).
+        The agent only supplies per-week activities/resources/tips, attached as
+        ``ai_weekly_plan``. To stay token-efficient the agent receives only the
+        missing skills + target role. Any failure or the toggle being off returns
+        the deterministic roadmap unchanged.
+        """
+        roadmap = self.build(
+            skill_confidence=skill_confidence, target_skills=target_skills,
+            current_score=current_score, job_title=job_title,
+            affinities=affinities, demand=demand, hours_per_week=hours_per_week,
+        )
+        if not settings.LLM_ENRICHMENT_ENABLED:
+            logger.info("adaptive_roadmap_path", path="fallback", reason="disabled")
+            return roadmap
+        try:
+            from app.agents.roadmap_agent import RoadmapAgent
+
+            target_job = {
+                "title": job_title,
+                "required_skills": [t.skill for t in roadmap.tasks],
+            }
+            ai = await asyncio.wait_for(
+                RoadmapAgent(db).generate(user_id, target_job, hours_per_week),
+                timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+            )
+            roadmap.ai_weekly_plan = [
+                {
+                    "week": w.number,
+                    "skill": w.skill,
+                    "topic": w.topic,
+                    "hours": w.hours,
+                    "activities": w.activities,
+                    "checkpoint": w.checkpoint,
+                }
+                for w in (ai.weeks or [])
+            ]
+            logger.info(
+                "adaptive_roadmap_path", path="ai_enriched",
+                ai_weeks=len(roadmap.ai_weekly_plan),
+            )
+        except Exception as e:  # noqa: BLE001 — enrichment must never break the endpoint
+            logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+            return roadmap
+        return roadmap
 
     @staticmethod
     def _milestones(items: list[AdaptiveTask], current_score: int) -> list[dict]:

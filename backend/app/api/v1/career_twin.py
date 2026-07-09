@@ -1,9 +1,12 @@
 """EMBEDHUNT AI — Career Twin API."""
-from fastapi import APIRouter, Body, Depends, Query
+from typing import Optional
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.permissions import get_current_user_id
 from app.database.session import get_db
+from app.repositories.resume_repository import ResumeRepository
 from app.services.career_twin_service import CareerTwinService
 
 router = APIRouter(prefix="/career-twin", tags=["Career Twin"])
@@ -11,12 +14,17 @@ router = APIRouter(prefix="/career-twin", tags=["Career Twin"])
 
 @router.post("/init", status_code=201, summary="Initialize the Career Twin from a resume")
 async def init_twin(
-    resume_id: str = Query(..., description="Parsed resume to seed the twin"),
+    resume_id: Optional[str] = Query(None, description="Resume to seed the twin; defaults to the primary resume"),
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    if not resume_id:
+        primary = await ResumeRepository(db).get_primary(user_id)
+        if not primary:
+            raise HTTPException(404, "No parsed resume found. Upload and parse a resume first.")
+        resume_id = primary.id
     svc = CareerTwinService(db)
-    twin = await svc.create_from_resume(user_id, resume_id)
+    twin = await svc.init_from_resume(user_id, resume_id)
     return svc.to_dict(twin)
 
 
@@ -33,6 +41,11 @@ async def get_summary(user_id: str = Depends(get_current_user_id), db: AsyncSess
 
 @router.get("/weekly-delta", summary="What changed in the Career Twin this week")
 async def weekly_delta(user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
+    return await CareerTwinService(db).get_weekly_delta(user_id)
+
+
+@router.get("/delta", summary="Alias of /weekly-delta")
+async def delta(user_id: str = Depends(get_current_user_id), db: AsyncSession = Depends(get_db)):
     return await CareerTwinService(db).get_weekly_delta(user_id)
 
 

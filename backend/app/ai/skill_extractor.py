@@ -7,6 +7,7 @@ phrases). Deterministic and offline.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass, field
 
@@ -181,6 +182,53 @@ class SkillExtractor:
         for s in self.extract(raw_text):
             grouped[s.category].append(s)
         return grouped
+
+    async def extract_ai(self, raw_text: str, *, db, user_id: str) -> list[ExtractedSkill]:
+        """Regex extraction unioned with LLM-inferred skills outside the taxonomy.
+
+        Deterministic regex hits are always kept. AI-discovered skills that the
+        taxonomy missed (new tech, aliases, inferred) are appended with a
+        confidence-weighted score. Any failure or the master toggle being off
+        returns the deterministic list unchanged.
+        """
+        from app.config.logging import get_logger
+        from app.config.settings import settings
+
+        logger = get_logger(__name__)
+        base = self.extract(raw_text)
+        if not settings.LLM_ENRICHMENT_ENABLED:
+            logger.info("skill_extractor_path", path="fallback", reason="disabled")
+            return base
+        try:
+            from app.agents.resume_agent import ResumeAgent
+
+            parsed = await asyncio.wait_for(
+                ResumeAgent(db).parse(raw_text, user_id),
+                timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+            )
+            known = {s.name.lower() for s in base}
+            added = 0
+            for name in (parsed.skills or []):
+                key = (name or "").strip().lower()
+                if not key or key in known:
+                    continue
+                known.add(key)
+                base.append(ExtractedSkill(
+                    name=key,
+                    category=_SKILL_CATEGORY.get(key, "concepts"),
+                    confidence=0.5,  # AI-inferred, not evidence-scored
+                    mentions=0,
+                    in_skills_section=False,
+                    near_experience=False,
+                    evidence=["ai_inferred"],
+                ))
+                added += 1
+            base.sort(key=lambda s: (-s.confidence, s.name))
+            logger.info("skill_extractor_path", path="ai_enriched", ai_added=added)
+        except Exception as e:  # noqa: BLE001 — enrichment must never break the caller
+            logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+            return self.extract(raw_text)
+        return base
 
     @staticmethod
     def _experience_terms(raw_text: str) -> set[str]:

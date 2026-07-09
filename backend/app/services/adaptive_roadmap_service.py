@@ -33,9 +33,10 @@ class AdaptiveRoadmapService:
         conf, _ = await self._twin_confidence(user_id)
         affinities = (await self.feedback.get_affinities(user_id)).get("skill_affinity", {})
         current_score = self._coverage_score(conf, target_skills)
-        roadmap = self.engine.build(
+        roadmap = await self.engine.build_ai(
             skill_confidence=conf, target_skills=target_skills,
             current_score=current_score, job_title=job_title,
+            db=self.db, user_id=user_id,
             affinities=affinities, demand=demand, hours_per_week=hours_per_week,
         )
         return roadmap.to_dict()
@@ -57,9 +58,10 @@ class AdaptiveRoadmapService:
         target_skills = list(demand.keys())
         affinities = (await self.feedback.get_affinities(user_id)).get("skill_affinity", {})
         current_score = self._coverage_score(conf, target_skills)
-        roadmap = self.engine.build(
+        roadmap = await self.engine.build_ai(
             skill_confidence=conf, target_skills=target_skills,
             current_score=current_score, job_title="Dream Companies",
+            db=self.db, user_id=user_id,
             affinities=affinities, demand=demand, hours_per_week=hours_per_week,
         )
         out = roadmap.to_dict()

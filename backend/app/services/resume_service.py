@@ -87,7 +87,7 @@ class ResumeService:
         if not r.raw_text:
             raise HTTPException(409, f"Not yet processed. Status: {r.status.value}")
         analyzer = get_resume_intelligence()
-        report = analyzer.analyze(r.raw_text).to_dict()
+        report = (await analyzer.analyze_ai(r.raw_text, db=self.db, user_id=user_id)).to_dict()
         if job_description:
             report["tailoring"] = analyzer.tailor_to_job(r.raw_text, job_description)
         return report

@@ -71,3 +71,13 @@ class CareerTwin(BaseModel):
 
     # Per-field change log: {field_name: iso_timestamp} — powers weekly delta.
     change_log: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    # ── Long-term memory / goals (Phase 3, additive) ──────────────────────
+    career_goals: Mapped[dict] = mapped_column(JSON, default=dict)  # {short_term, long_term, target_role}
+    learning_style: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)  # visual/reading/practice
+    interviews_completed: Mapped[int] = mapped_column(Integer, default=0)
+    avg_interview_score: Mapped[float] = mapped_column(Float, default=0.0)
+    weak_interview_topics: Mapped[list] = mapped_column(JSON, default=list)
+    skills_learned_this_month: Mapped[list] = mapped_column(JSON, default=list)
+    learning_streak_days: Mapped[int] = mapped_column(Integer, default=0)
+    last_active_date: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)

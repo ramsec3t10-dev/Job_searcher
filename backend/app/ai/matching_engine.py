@@ -10,13 +10,19 @@ Additive: does not alter the legacy keyword-only ranking path.
 """
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 
 from app.ai.semantic_engine import SemanticMatchEngine, get_semantic_engine
+from app.config.logging import get_logger
+from app.config.settings import settings
 from app.recommendation.explain import GapAnalysis, analyze_gaps
 from app.recommendation.matcher import MatchScore, compute_match
 from app.recommendation.ranking import MatchTier, _meets_salary, _tier
 from app.resume.normalizer import CandidateProfile
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -36,6 +42,8 @@ class UnifiedMatch:
     explanation: str = ""
     match: MatchScore | None = None
     gap: GapAnalysis | None = None
+    reasoning: str = ""
+    interview_probability: int = 0
 
 
 class MatchingEngine:
@@ -82,6 +90,47 @@ class MatchingEngine:
             match=km,
             gap=gap,
         )
+
+    async def match_ai(self, profile: CandidateProfile, job: dict, *, db, user_id: str,
+                       skill_confidence: dict[str, float] | None = None) -> UnifiedMatch:
+        """Deterministic ``match`` enriched with LLM reasoning.
+
+        Adds ``reasoning`` and ``interview_probability`` on success; the base
+        score and every existing field are preserved. To stay token-efficient
+        the agent only receives the candidate skills + job description, never the
+        full Career Twin. Any failure or the toggle being off returns the base
+        :class:`UnifiedMatch` unchanged.
+        """
+        m = self.match(profile, job, skill_confidence)
+        if not settings.LLM_ENRICHMENT_ENABLED:
+            logger.info("matching_engine_path", path="fallback", reason="disabled")
+            return m
+        try:
+            from app.agents.matching_agent import MatchingAgent
+
+            slim_twin = SimpleNamespace(
+                skills=[{"name": s} for s in (m.matched_skills + m.missing_skills)],
+                total_years_experience=0.0,
+                current_role="",
+            )
+            slim_job = {
+                "title": job.get("title", ""),
+                "description": job.get("description", ""),
+                "required_skills": job.get("required_skills", []) or [],
+            }
+            ai = await asyncio.wait_for(
+                MatchingAgent(db).match(slim_twin, slim_job, user_id),
+                timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+            )
+            m.reasoning = ai.reasoning
+            m.interview_probability = ai.interview_probability
+            if ai.reasoning:
+                m.explanation = ai.reasoning
+            logger.info("matching_engine_path", path="ai_enriched")
+        except Exception as e:  # noqa: BLE001 — enrichment must never break the caller
+            logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+            return m
+        return m
 
     def rank_jobs(self, profile: CandidateProfile, jobs: list[dict],
                   min_score: int = 40, salary_min: float = 15.0,

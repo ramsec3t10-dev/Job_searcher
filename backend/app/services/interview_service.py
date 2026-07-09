@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.profile_service import ProfileService
 from app.recommendation.engine import run_matching
-from app.interview.generator import generate_interview_kit
+from app.interview.generator import generate_interview_kit_ai
 
 class InterviewService:
     def __init__(self, db: AsyncSession):
@@ -15,7 +15,7 @@ class InterviewService:
         result = run_matching(profile, min_score=0, salary_min=0)
         job = next((j for j in result.jobs if j.job_id == job_id), None)
         if not job: raise HTTPException(404, f"Job {job_id} not found")
-        kit = generate_interview_kit(job.title, job.company, job.match.matched_skills, job.match_score)
+        kit = await generate_interview_kit_ai(job.title, job.company, job.match.matched_skills, job.match_score, db=self.db, user_id=user_id)
         return {
             "job_title": kit.job_title, "company": kit.company,
             "readiness_score": kit.readiness_score,
@@ -35,7 +35,7 @@ class InterviewService:
         if not result.jobs:
             return {"message": "No matched jobs found. Upload resume first."}
         top_job = result.jobs[0]
-        kit = generate_interview_kit(top_job.title, top_job.company, top_job.match.matched_skills, top_job.match_score)
+        kit = await generate_interview_kit_ai(top_job.title, top_job.company, top_job.match.matched_skills, top_job.match_score, db=self.db, user_id=user_id)
         return {
             "based_on": f"{top_job.title} at {top_job.company}",
             "readiness_score": kit.readiness_score,

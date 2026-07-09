@@ -22,13 +22,15 @@ class SalaryService:
     async def get_intelligence(self, user_id: str) -> dict:
         twin = await self.twin_svc.get_twin(user_id)
         skill_names = [s.get("name", "") for s in (twin.skills or []) if s.get("name")]
-        result = self.engine.compute(
+        result = await self.engine.compute_ai(
             years_experience=twin.total_years_experience or 0.0,
             skill_names=skill_names,
             domains=list(twin.preferred_domains or []),
             locations=list(twin.preferred_locations or []),
             current_salary_lpa=twin.current_salary_lpa or 0.0,
             dream_companies=list(twin.dream_companies or []),
+            db=self.db,
+            user_id=user_id,
         )
         logger.info(
             "salary_intelligence_computed",

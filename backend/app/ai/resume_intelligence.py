@@ -11,10 +11,15 @@ Builds on the 300+ skill taxonomy (Module 3). No network, no LLM required.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass, field
 
 from app.ai.skill_extractor import SkillExtractor
+from app.config.logging import get_logger
+from app.config.settings import settings
+
+logger = get_logger(__name__)
 
 _EMAIL = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 _PHONE = re.compile(r"(\+?\d[\d\s\-().]{7,}\d)")
@@ -111,6 +116,38 @@ class ResumeIntelligence:
             bullet_count=bullet_count, word_count=word_count, cliches=cliches,
             top_skills=top_skills, suggestions=suggestions,
         )
+
+    async def analyze_ai(self, raw_text: str, *, db, user_id: str) -> ResumeReport:
+        """Deterministic ``analyze`` enriched with LLM-parsed skills.
+
+        External return type is unchanged (:class:`ResumeReport`). AI-discovered
+        skills are unioned into ``top_skills``. Any failure, timeout, or the
+        master toggle being off silently falls back to the deterministic report.
+        """
+        report = self.analyze(raw_text)
+        if not settings.LLM_ENRICHMENT_ENABLED:
+            logger.info("resume_intelligence_path", path="fallback", reason="disabled")
+            return report
+        try:
+            from app.agents.resume_agent import ResumeAgent
+
+            parsed = await asyncio.wait_for(
+                ResumeAgent(db).parse(raw_text, user_id),
+                timeout=settings.LLM_ENRICHMENT_TIMEOUT_SECONDS,
+            )
+            ai_skills = [s for s in (parsed.skills or []) if s]
+            merged = list(dict.fromkeys([*report.top_skills, *ai_skills]))
+            report.top_skills = merged[:20]
+            report.skill_count = max(
+                report.skill_count, len({s.lower() for s in report.top_skills})
+            )
+            logger.info(
+                "resume_intelligence_path", path="ai_enriched", ai_skills=len(ai_skills)
+            )
+        except Exception as e:  # noqa: BLE001 — enrichment must never break the endpoint
+            logger.warning("ai_enrichment_failed", module=__name__, error=str(e))
+            return report
+        return report
 
     def tailor_to_job(self, raw_text: str, job_description: str) -> dict:
         resume_skills = {s.name for s in self.skills.extract(raw_text)}
