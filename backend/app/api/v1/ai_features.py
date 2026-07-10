@@ -18,7 +18,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.permissions import get_current_user_id
+from app.auth.permissions import get_current_user_id, require_role, UserRole
+from app.api.v1.rate_limit import rate_limit
 from app.config.logging import get_logger
 from app.config.settings import settings
 from app.database.session import get_db
@@ -141,7 +142,11 @@ async def _latest_tokens(db: AsyncSession, user_id: str) -> int:
 
 
 # ── MENTOR ───────────────────────────────────────────────────────────────────
-@router.post("/mentor/chat", summary="Chat with the AI Career Mentor")
+@router.post(
+    "/mentor/chat",
+    summary="Chat with the AI Career Mentor",
+    dependencies=[Depends(rate_limit("mentor_chat", 20, 3600))],
+)
 async def mentor_chat(
     payload: dict = Body(..., example={"message": "How do I get into Qualcomm?", "conversation_id": ""}),
     user_id: str = Depends(ai_guard),
@@ -187,7 +192,11 @@ async def mentor_daily_brief(
 
 
 # ── RESUME ───────────────────────────────────────────────────────────────────
-@router.post("/resume/{resume_id}/score", summary="Score a resume (optionally vs a job)")
+@router.post(
+    "/resume/{resume_id}/score",
+    summary="Score a resume (optionally vs a job)",
+    dependencies=[Depends(rate_limit("resume_score", 10, 3600))],
+)
 async def resume_score(
     resume_id: str,
     payload: dict = Body(default={}, example={"job_id": ""}),
@@ -211,7 +220,11 @@ async def resume_score(
     return result.model_dump()
 
 
-@router.post("/resume/{resume_id}/rewrite", summary="Rewrite a resume for a job (saves a version)")
+@router.post(
+    "/resume/{resume_id}/rewrite",
+    summary="Rewrite a resume for a job (saves a version)",
+    dependencies=[Depends(rate_limit("resume_rewrite", 5, 3600))],
+)
 async def resume_rewrite(
     resume_id: str,
     payload: dict = Body(..., example={"job_id": "job-123"}),
@@ -287,7 +300,11 @@ async def interview_questions(
     return {"questions": [q.model_dump() for q in questions]}
 
 
-@router.post("/interview/evaluate", summary="Evaluate an interview answer")
+@router.post(
+    "/interview/evaluate",
+    summary="Evaluate an interview answer",
+    dependencies=[Depends(rate_limit("interview_evaluate", 30, 3600))],
+)
 async def interview_evaluate(
     payload: dict = Body(..., example={"question": "What is priority inversion?", "answer": "...", "skill": "rtos"}),
     user_id: str = Depends(ai_guard),
@@ -360,7 +377,11 @@ async def salary_estimate(
 
 
 # ── CODING ───────────────────────────────────────────────────────────────────
-@router.post("/code/review", summary="AI review of embedded C/C++")
+@router.post(
+    "/code/review",
+    summary="AI review of embedded C/C++",
+    dependencies=[Depends(rate_limit("code_review", 15, 3600))],
+)
 async def code_review(
     payload: dict = Body(..., example={"code": "void isr(){ x=1; }", "language": "c"}),
     user_id: str = Depends(ai_guard),
@@ -433,8 +454,34 @@ async def ai_usage(
     }
 
 
+# ── OBSERVABILITY ────────────────────────────────────────────────────────────
+@router.get(
+    "/system/health",
+    summary="AI system health (admin only)",
+    dependencies=[Depends(require_role(UserRole.PLATFORM_ADMIN))],
+)
+async def ai_system_health(db: AsyncSession = Depends(get_db)):
+    from app.services.ai_analytics_service import AIAnalyticsService
+
+    return await AIAnalyticsService(db).get_system_health()
+
+
+@router.get("/insights", summary="Your personal AI usage and learning insights")
+async def ai_insights(
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.ai_analytics_service import AIAnalyticsService
+
+    return await AIAnalyticsService(db).get_user_insights(user_id)
+
+
 # ── STREAMING (bonus): SSE mentor chat ───────────────────────────────────────
-@router.post("/mentor/chat/stream", summary="Streaming (SSE) AI Career Mentor chat")
+@router.post(
+    "/mentor/chat/stream",
+    summary="Streaming (SSE) AI Career Mentor chat",
+    dependencies=[Depends(rate_limit("mentor_chat", 20, 3600))],
+)
 async def mentor_chat_stream(
     payload: dict = Body(..., example={"message": "How do I get into Qualcomm?", "conversation_id": ""}),
     user_id: str = Depends(ai_guard),

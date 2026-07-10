@@ -1,25 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
-/// Friendly, icon-based empty state (no external Lottie assets required).
+/// Friendly empty state. Renders (in priority order) a Lottie animation, an
+/// emoji, or an icon inside a soft gradient medallion, followed by a title,
+/// message and optional call-to-action.
 class EHEmptyState extends StatelessWidget {
   const EHEmptyState({
     super.key,
-    required this.icon,
+    this.icon,
+    this.emoji,
+    this.lottieAsset,
     required this.title,
     required this.message,
     this.actionLabel,
     this.onAction,
-  });
+  }) : assert(icon != null || emoji != null || lottieAsset != null,
+            'Provide one of icon, emoji or lottieAsset');
 
-  final IconData icon;
+  final IconData? icon;
+  final String? emoji;
+  final String? lottieAsset;
   final String title;
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  Widget _visual() {
+    if (lottieAsset != null) {
+      return SizedBox(
+        width: 160,
+        height: 160,
+        child: Lottie.asset(lottieAsset!, fit: BoxFit.contain),
+      );
+    }
+    return Container(
+      width: 96,
+      height: 96,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            EHColors.brand.withValues(alpha: 0.18),
+            EHColors.accent.withValues(alpha: 0.12),
+          ],
+        ),
+      ),
+      child: emoji != null
+          ? Text(emoji!, style: const TextStyle(fontSize: 42))
+          : Icon(icon, size: 44, color: EHColors.brand),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,20 +64,7 @@ class EHEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    EHColors.brand.withValues(alpha: 0.18),
-                    EHColors.accent.withValues(alpha: 0.12),
-                  ],
-                ),
-              ),
-              child: Icon(icon, size: 44, color: EHColors.brand),
-            ),
+            _visual(),
             const SizedBox(height: 20),
             Text(
               title,

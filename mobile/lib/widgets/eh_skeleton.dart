@@ -111,3 +111,95 @@ class ListSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// Placeholder for a single job card (logo + two text lines + chips row).
+class JobCardSkeleton extends StatelessWidget {
+  const JobCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return EHShimmer(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.card,
+          borderRadius: BorderRadius.circular(EHSpacing.radiusLg),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                EHSkeleton(width: 44, height: 44, radius: EHSpacing.radiusMd),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      EHSkeleton(width: 160, height: 16),
+                      SizedBox(height: 8),
+                      EHSkeleton(width: 100, height: 12),
+                    ],
+                  ),
+                ),
+                const EHSkeleton(width: 48, height: 48, radius: 24),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: const [
+                EHSkeleton(width: 70, height: 24, radius: 999),
+                SizedBox(width: 8),
+                EHSkeleton(width: 90, height: 24, radius: 999),
+                SizedBox(width: 8),
+                EHSkeleton(width: 60, height: 24, radius: 999),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full loading placeholder for the Profile screen.
+class ProfileSkeleton extends StatelessWidget {
+  const ProfileSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return EHShimmer(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+        children: [
+          Center(
+            child: Column(
+              children: const [
+                EHSkeleton(width: 88, height: 88, radius: 44),
+                SizedBox(height: 16),
+                EHSkeleton(width: 160, height: 20),
+                SizedBox(height: 8),
+                EHSkeleton(width: 120, height: 14),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          EHSkeleton(
+              height: 140, radius: EHSpacing.radiusLg, width: double.infinity),
+          const SizedBox(height: 20),
+          const EHSkeleton(width: 140, height: 18),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(
+              6,
+              (_) => const EHSkeleton(width: 84, height: 30, radius: 999),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

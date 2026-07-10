@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 import 'animated_counter.dart';
 import 'eh_card.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
 /// Number that animates from its previous value to the new one.
 class AnimatedCounter extends StatelessWidget {

@@ -33,6 +33,7 @@ class ModelConfig:
     temperature: float
     cost_per_1k_input: float
     cost_per_1k_output: float
+    context_window: int = 200_000
 
 
 HAIKU = "haiku"
@@ -60,6 +61,7 @@ _TIER_COST: dict[str, tuple[float, float]] = {
 }
 _TIER_MAX_TOKENS: dict[str, int] = {HAIKU: 2048, SONNET: 4096, OPUS: 8192}
 _TIER_TEMPERATURE: dict[str, float] = {HAIKU: 0.2, SONNET: 0.4, OPUS: 0.5}
+_TIER_CONTEXT_WINDOW: dict[str, int] = {HAIKU: 200_000, SONNET: 200_000, OPUS: 200_000}
 
 # Task-level temperature overrides (deterministic tasks run colder).
 _TASK_TEMPERATURE: dict[TaskType, float] = {
@@ -116,6 +118,7 @@ def select_model(task: TaskType) -> ModelConfig:
         temperature=_TASK_TEMPERATURE.get(task, _TIER_TEMPERATURE[tier]),
         cost_per_1k_input=cost_in,
         cost_per_1k_output=cost_out,
+        context_window=_TIER_CONTEXT_WINDOW[tier],
     )
 
 

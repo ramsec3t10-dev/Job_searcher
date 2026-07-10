@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/eh_context.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
 /// A section title with an optional trailing action.
 class SectionHeader extends StatelessWidget {

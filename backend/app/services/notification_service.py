@@ -70,6 +70,17 @@ class NotificationService:
         )
         return self._serialize(n)
 
+    async def create_review_reminder(self, user_id: str, skill_count: int) -> dict:
+        n = await self._create(
+            user_id,
+            NotificationType.PROFILE_TIP,
+            title="Spaced repetition review due",
+            body=f"Review {skill_count} skills today to keep them fresh.",
+            action_url="/learn/review",
+            metadata={"skill_count": skill_count, "reason": "review_due"},
+        )
+        return self._serialize(n)
+
     async def create_application_update(
         self, user_id: str, job_title: str, status: str
     ) -> dict:

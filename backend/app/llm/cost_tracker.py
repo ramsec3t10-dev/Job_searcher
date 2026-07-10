@@ -38,6 +38,30 @@ class AIUsageLog(BaseModel):
 class CostTracker:
     def __init__(self, session_factory=None):
         self._session_factory = session_factory
+        # Process-level optimisation counters (reset per tracker instance).
+        self.tokens_saved_by_compression = 0
+        self.cache_hits = 0
+        self.estimated_savings_usd = 0.0
+
+    def record_compression(self, tokens_saved: int, cost_per_1k_output: float) -> None:
+        """Account for tokens dropped by prompt compression before an expensive call."""
+        if tokens_saved <= 0:
+            return
+        self.tokens_saved_by_compression += tokens_saved
+        self.estimated_savings_usd += round((tokens_saved / 1000) * cost_per_1k_output, 6)
+
+    def record_cache_hit(self, saved_cost_usd: float = 0.0) -> None:
+        """Account for a served-from-cache response (no model call billed)."""
+        self.cache_hits += 1
+        if saved_cost_usd > 0:
+            self.estimated_savings_usd += round(saved_cost_usd, 6)
+
+    def optimization_stats(self) -> dict:
+        return {
+            "tokens_saved_by_compression": self.tokens_saved_by_compression,
+            "cache_hits": self.cache_hits,
+            "estimated_savings_usd": round(self.estimated_savings_usd, 6),
+        }
 
     def _sf(self):
         if self._session_factory is not None:

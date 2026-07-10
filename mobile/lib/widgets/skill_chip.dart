@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
 /// Visual state of a [SkillChip].
 enum SkillChipVariant { matched, missing, neutral, learning, selected }

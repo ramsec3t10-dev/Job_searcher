@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
 /// A labelled radar chart for a small set of categories (0–100 each).
 class SkillsRadar extends StatelessWidget {

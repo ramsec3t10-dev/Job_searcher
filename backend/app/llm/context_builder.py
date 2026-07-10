@@ -26,6 +26,22 @@ _SUMMARY_MAX_CHARS = 2000
 class ContextBuilder:
     """Static builders — one per AI task. All output is token-bounded."""
 
+    # ── Cross-user isolation guard ──────────────────────────────────────
+    @staticmethod
+    def _assert_owner(twin: Any, user_id: Optional[str]) -> None:
+        """Fail closed if a Career Twin is about to be used for the wrong user.
+
+        Prevents cross-user data leakage: a twin loaded for user A must never be
+        assembled into context for user B. No-op when ``user_id`` is not supplied
+        (internal/anonymous calls) or the twin carries no owner id.
+        """
+        if user_id is None or twin is None:
+            return
+        owner = getattr(twin, "user_id", None)
+        assert owner == user_id, (
+            f"career twin owner mismatch: twin belongs to {owner!r}, requested by {user_id!r}"
+        )
+
     # ── Skill compaction ────────────────────────────────────────────────
     @staticmethod
     def _compact_skills(twin: Any) -> list[dict]:
@@ -90,7 +106,8 @@ class ContextBuilder:
         return ContextBuilder._enforce_budget(payload)
 
     @staticmethod
-    def for_job_matching(twin: Any, job: dict) -> dict:
+    def for_job_matching(twin: Any, job: dict, user_id: Optional[str] = None) -> dict:
+        ContextBuilder._assert_owner(twin, user_id)
         payload = {
             "candidate_summary": ContextBuilder._candidate_summary(twin),
             "skills": [s["n"] for s in ContextBuilder._compact_skills(twin)],
@@ -103,7 +120,8 @@ class ContextBuilder:
         return ContextBuilder._enforce_budget(payload)
 
     @staticmethod
-    def for_career_mentor(twin: Any, memories: list, user_message: str) -> dict:
+    def for_career_mentor(twin: Any, memories: list, user_message: str, user_id: Optional[str] = None) -> dict:
+        ContextBuilder._assert_owner(twin, user_id)
         components = [
             (f"memory_{i}", getattr(m, "summary", "") or "", getattr(m, "importance_score", 3) or 3)
             for i, m in enumerate(memories or [])
@@ -117,7 +135,8 @@ class ContextBuilder:
         return ContextBuilder._enforce_budget(payload)
 
     @staticmethod
-    def for_interview(twin: Any, job: dict, skill: str = "") -> dict:
+    def for_interview(twin: Any, job: dict, skill: str = "", user_id: Optional[str] = None) -> dict:
+        ContextBuilder._assert_owner(twin, user_id)
         history = getattr(twin, "interview_history", None) or []
         previous_scores = [h.get("score") for h in history if isinstance(h, dict) and "score" in h]
         payload = {
@@ -131,7 +150,8 @@ class ContextBuilder:
         return ContextBuilder._enforce_budget(payload)
 
     @staticmethod
-    def for_roadmap(twin: Any, target_job: dict, hours_per_week: int = 10) -> dict:
+    def for_roadmap(twin: Any, target_job: dict, hours_per_week: int = 10, user_id: Optional[str] = None) -> dict:
+        ContextBuilder._assert_owner(twin, user_id)
         current = [s["n"] for s in ContextBuilder._compact_skills(twin)]
         required = target_job.get("required_skills", []) or []
         have = {c.lower() for c in current}
@@ -147,7 +167,8 @@ class ContextBuilder:
         return ContextBuilder._enforce_budget(payload)
 
     @staticmethod
-    def for_salary(twin: Any, target_company: Optional[str] = None) -> dict:
+    def for_salary(twin: Any, target_company: Optional[str] = None, user_id: Optional[str] = None) -> dict:
+        ContextBuilder._assert_owner(twin, user_id)
         payload = {
             "skills": [s["n"] for s in ContextBuilder._compact_skills(twin)],
             "experience_years": getattr(twin, "total_years_experience", 0) or 0,

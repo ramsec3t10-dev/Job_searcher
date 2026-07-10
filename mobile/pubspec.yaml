@@ -10,16 +10,33 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  provider: ^6.1.2          # state management
-  http: ^1.2.2              # API client
+  provider: ^6.1.2          # legacy state (being migrated to Riverpod)
+  http: ^1.2.2              # legacy API client
   flutter_secure_storage: ^9.2.2  # JWT storage
   intl: ^0.19.0             # formatting
+
+  # State management (Phase 1 — Riverpod migration)
+  flutter_riverpod: ^2.5.1  # providers + ProviderScope
+  hooks_riverpod: ^2.5.1    # HookConsumerWidget
+  flutter_hooks: ^0.20.5    # widget-local hooks
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.7        # declarative routing + shell routes
+
+  # Local cache / persistence
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^6.0.5 # online/offline awareness
 
   # Premium UI/UX (v5.0 design system)
   google_fonts: ^6.2.1     # Inter / Space Grotesk / JetBrains Mono
   flutter_animate: ^4.5.0  # declarative entrance animations
   shimmer: ^3.0.0          # skeleton loaders
   fl_chart: ^0.69.0        # radar / bar charts
+  cached_network_image: ^3.4.1 # company logos with disk cache
+  lottie: ^3.1.2           # empty-state / celebration animations
+  url_launcher: ^6.3.0     # open apply links / learning resources
 
   # In-app auto-update (download + install new APK without manual reinstall)
   dio: ^5.4.3               # APK download with progress

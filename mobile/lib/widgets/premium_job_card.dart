@@ -4,7 +4,7 @@ import '../models/job.dart';
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 import 'company_avatar.dart';
 import 'eh_card.dart';
 import 'score_ring.dart';

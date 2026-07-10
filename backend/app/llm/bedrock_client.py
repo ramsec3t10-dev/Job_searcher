@@ -16,10 +16,53 @@ from typing import Any, AsyncIterator, Optional
 from app.config.logging import get_logger
 from app.config.settings import settings
 from app.core.exceptions import EmbedHuntException
+from app.llm.model_selector import TaskType
 
 logger = get_logger(__name__)
 
 _TIMEOUTS = {"haiku": 30.0, "sonnet": 60.0, "opus": 120.0}
+
+# Task-specific responses used when Bedrock is unreachable (circuit open or all
+# retries exhausted), so the product degrades gracefully instead of erroring.
+FALLBACK_RESPONSES: dict[TaskType, str] = {
+    TaskType.EXTRACTION: "{}",
+    TaskType.SUMMARIZATION: "",
+    TaskType.MATCHING: '{"score":0,"reasoning":"Live scoring unavailable; showing baseline keyword match.","matched_skills":[],"missing_skills":[]}',
+    TaskType.MENTORING: "AI mentor is temporarily unavailable. Meanwhile, review your Career Twin skills and keep your streak going.",
+}
+_DEFAULT_FALLBACK = "AI is temporarily unavailable. Please try again shortly."
+
+# Most recent circuit-breaker state, exposed for observability dashboards.
+_CIRCUIT_STATE = "closed"
+
+
+def circuit_state() -> str:
+    """Return the most recently observed circuit-breaker state."""
+    return _CIRCUIT_STATE
+
+
+def _set_global_circuit_state(state: str) -> None:
+    global _CIRCUIT_STATE
+    _CIRCUIT_STATE = state
+
+
+def fallback_for(task: Optional[TaskType]) -> Optional[dict[str, Any]]:
+    """Return an invoke_model-shaped fallback payload for ``task``.
+
+    ``None`` when no task is supplied (internal helper calls), so those callers
+    keep their existing raise-on-failure behaviour.
+    """
+    if task is None:
+        return None
+    content = FALLBACK_RESPONSES.get(task, _DEFAULT_FALLBACK)
+    return {
+        "content": content,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "latency_ms": 0.0,
+        "model": "fallback",
+        "fallback": True,
+    }
 
 
 class BedrockError(EmbedHuntException):
@@ -42,28 +85,56 @@ def _timeout_for(model_id: str) -> float:
 
 
 class _CircuitBreaker:
-    def __init__(self, threshold: int = 5, reset_seconds: int = 60):
+    """Opens after ``threshold`` failures within ``window_seconds``.
+
+    While open, calls are short-circuited until ``reset_seconds`` elapse, after
+    which a single probe is allowed (half-open). Every state transition is
+    logged and mirrored to the module-level observability hook.
+    """
+
+    def __init__(self, threshold: int = 5, window_seconds: int = 60, reset_seconds: int = 60):
         self.threshold = threshold
+        self.window_seconds = window_seconds
         self.reset_seconds = reset_seconds
-        self.failures = 0
+        self._failures: list[float] = []
         self.opened_at = 0.0
+        self._state = "closed"
+
+    def _prune(self, now: float) -> None:
+        cutoff = now - self.window_seconds
+        self._failures = [t for t in self._failures if t >= cutoff]
+
+    def _transition(self, state: str) -> None:
+        if state != self._state:
+            logger.warning("circuit_breaker_state_change", old=self._state, new=state)
+            self._state = state
+            _set_global_circuit_state(state)
+
+    def state(self) -> str:
+        if self._state == "open" and self.opened_at and time.time() - self.opened_at >= self.reset_seconds:
+            return "half_open"
+        return self._state
 
     def allow(self) -> bool:
-        if self.failures < self.threshold:
+        if self._state != "open":
             return True
-        if time.time() - self.opened_at >= self.reset_seconds:
-            self.failures = self.threshold - 1  # half-open: allow a probe
-            return True
+        if self.opened_at and time.time() - self.opened_at >= self.reset_seconds:
+            self._transition("half_open")
+            return True  # allow a single probe
         return False
 
     def record_success(self) -> None:
-        self.failures = 0
+        self._failures.clear()
         self.opened_at = 0.0
+        self._transition("closed")
 
     def record_failure(self) -> None:
-        self.failures += 1
-        if self.failures >= self.threshold:
-            self.opened_at = time.time()
+        now = time.time()
+        self._failures.append(now)
+        self._prune(now)
+        if len(self._failures) >= self.threshold:
+            self.opened_at = now
+            self._transition("open")
 
 
 class BedrockClient:
@@ -93,8 +164,13 @@ class BedrockClient:
         max_tokens: int = 1024,
         temperature: float = 0.4,
         timeout: Optional[float] = None,
+        task: Optional[TaskType] = None,
     ) -> dict[str, Any]:
         if not self._breaker.allow():
+            fallback = fallback_for(task)
+            if fallback is not None:
+                logger.warning("bedrock_circuit_open_fallback", model=model_id, task=getattr(task, "value", None))
+                return fallback
             raise CircuitOpenError()
         timeout = timeout or _timeout_for(model_id)
         last_err: Optional[Exception] = None
@@ -146,6 +222,10 @@ class BedrockClient:
                 backoff = min(8.0, 0.5 * (2 ** (attempt - 1)) + random.random() * 0.25)
                 await asyncio.sleep(backoff)
         logger.error("bedrock_invoke_error", model=model_id, error=str(last_err))
+        fallback = fallback_for(task)
+        if fallback is not None:
+            logger.warning("bedrock_exhausted_fallback", model=model_id, task=getattr(task, "value", None))
+            return fallback
         raise BedrockError(f"invoke_model failed after {attempt} attempts: {last_err}")
 
     async def invoke_model_stream(

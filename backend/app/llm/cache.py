@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import time
 from dataclasses import asdict
 from typing import Optional, TYPE_CHECKING
@@ -41,6 +42,8 @@ class SemanticCache:
         self._connected = False
         self._mem: dict[str, tuple[float, str]] = {}
         self._user_index: dict[str, set[str]] = {}
+        # Embedding cache: key -> (embedding, serialized AIResponse).
+        self._emb_mem: dict[str, tuple[list[float], str]] = {}
 
     @staticmethod
     def make_key(task: TaskType, system: str, user_message: str) -> str:
@@ -113,6 +116,89 @@ class SemanticCache:
                 pass
         for key in self._user_index.pop(user_id, set()):
             self._mem.pop(key, None)
+
+    # ── Embedding-similarity cache (mentor conversations) ─────────────────
+    _EMB_INDEX = "llm:emb:index"
+
+    @staticmethod
+    def _emb_key(key: str) -> str:
+        return f"llm:emb:{key}"
+
+    async def store_with_embedding(
+        self, key: str, response: "AIResponse", embedding: list[float]
+    ) -> None:
+        """Persist a response alongside its query embedding for fuzzy recall.
+
+        Used for open-ended tasks (e.g. mentoring) where two differently phrased
+        questions should hit the same cached answer.
+        """
+        if not embedding:
+            return
+        serialized = self._serialize(response)
+        payload = json.dumps({"embedding": list(embedding), "response": serialized})
+        entry_key = self._emb_key(key)
+        client = await self._client()
+        if client is not None:
+            try:
+                await client.set(entry_key, payload)
+                await client.sadd(self._EMB_INDEX, entry_key)
+            except Exception:  # noqa: BLE001
+                pass
+        self._emb_mem[entry_key] = (list(embedding), serialized)
+
+    async def find_similar(
+        self, query_embedding: list[float], threshold: float = 0.92
+    ) -> Optional["AIResponse"]:
+        """Return the cached response whose stored query embedding is closest to
+        ``query_embedding``, provided that similarity exceeds ``threshold``.
+        """
+        if not query_embedding:
+            return None
+        best_sim = threshold
+        best_raw: Optional[str] = None
+
+        async for embedding, raw in self._iter_embeddings():
+            sim = self._cosine(query_embedding, embedding)
+            if sim >= best_sim:
+                best_sim = sim
+                best_raw = raw
+        if best_raw is None:
+            return None
+        logger.info("ai_cache_semantic_hit", similarity=round(best_sim, 4))
+        response = self._deserialize(best_raw)
+        response.cached = True
+        return response
+
+    async def _iter_embeddings(self):
+        """Yield ``(embedding, serialized_response)`` for every stored entry."""
+        seen: set[str] = set()
+        client = await self._client()
+        if client is not None:
+            try:
+                entry_keys = await client.smembers(self._EMB_INDEX)
+                for entry_key in entry_keys or []:
+                    raw = await client.get(entry_key)
+                    if not raw:
+                        continue
+                    data = json.loads(raw)
+                    seen.add(entry_key)
+                    yield data["embedding"], data["response"]
+            except Exception:  # noqa: BLE001
+                pass
+        for entry_key, (embedding, raw) in self._emb_mem.items():
+            if entry_key not in seen:
+                yield embedding, raw
+
+    @staticmethod
+    def _cosine(a: list[float], b: list[float]) -> float:
+        if not a or not b or len(a) != len(b):
+            return 0.0
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = math.sqrt(sum(x * x for x in a))
+        norm_b = math.sqrt(sum(y * y for y in b))
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 0.0
+        return dot / (norm_a * norm_b)
 
     def _serialize(self, response: "AIResponse") -> str:
         data = asdict(response)

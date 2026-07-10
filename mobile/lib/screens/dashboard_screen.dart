@@ -8,7 +8,7 @@ import '../providers/career_provider.dart';
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 import '../widgets/eh_card.dart';
 import '../widgets/eh_metric_card.dart';
 import '../widgets/eh_skeleton.dart';

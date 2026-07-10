@@ -1,7 +1,7 @@
 """EMBEDHUNT AI — Central Settings"""
 from functools import lru_cache
 from typing import List, Optional
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -106,6 +106,16 @@ class Settings(BaseSettings):
 
     @property
     def database_url_sync(self) -> str: return self.DATABASE_URL.replace("+asyncpg", "")
+
+    @model_validator(mode="after")
+    def validate_bedrock_config(self):
+        """Fail fast at startup if AI enrichment is on but Bedrock is unconfigured."""
+        if self.LLM_ENRICHMENT_ENABLED:
+            if not self.BEDROCK_API_KEY:
+                raise ValueError("BEDROCK_API_KEY required when LLM_ENRICHMENT_ENABLED=True")
+            if not self.AWS_REGION:
+                raise ValueError("AWS_REGION required when LLM_ENRICHMENT_ENABLED=True")
+        return self
 
 @lru_cache()
 def get_settings() -> Settings: return Settings()

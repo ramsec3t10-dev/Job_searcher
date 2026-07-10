@@ -6,6 +6,7 @@ turn (conversation history) and a compact memory of the advice given.
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 
 from app.agents.base_agent import BaseAgent
@@ -19,11 +20,14 @@ from app.llm.response_parser import parse_structured
 class MentorAgent(BaseAgent):
     async def advise(self, user_id: str, message: str, conversation_id: str) -> MentorResponse:
         self.user_id = user_id
-        twin = await self.twin_repo.get_by_user(user_id)
-        memories = await self.memory_repo.get_relevant(
-            user_id, tags=["conversation", "interview", "learning"], limit=8
+        # Twin and long-term memory are independent reads — fetch in parallel.
+        twin, memories = await asyncio.gather(
+            self.twin_repo.get_by_user(user_id),
+            self.memory_repo.get_relevant(
+                user_id, tags=["conversation", "interview", "learning"], limit=8
+            ),
         )
-        context = ContextBuilder.for_career_mentor(twin, memories, message)
+        context = ContextBuilder.for_career_mentor(twin, memories, message, user_id=user_id)
         history = await self.conversation_manager.get_history(user_id, conversation_id, db=self.db)
 
         history_text = context["recent_history"]
@@ -50,7 +54,7 @@ class MentorAgent(BaseAgent):
     async def daily_brief(self, user_id: str) -> DailyBrief:
         self.user_id = user_id
         twin = await self.twin_repo.get_by_user(user_id)
-        context = ContextBuilder.for_career_mentor(twin, [], "")
+        context = ContextBuilder.for_career_mentor(twin, [], "", user_id=user_id)
         weak = getattr(twin, "weak_interview_topics", None) or getattr(twin, "known_weaknesses", None) or []
         top_gap = weak[0] if weak else ""
 

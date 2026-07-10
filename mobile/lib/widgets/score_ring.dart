@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 
 /// Animated circular score ring with a count-up number in the centre.
 class ScoreRing extends StatelessWidget {

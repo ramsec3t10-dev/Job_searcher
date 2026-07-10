@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography.dart';
+import '../theme/typography_legacy.dart';
 import 'dashboard_screen.dart';
 import 'interview_screen.dart';
 import 'jobs_screen.dart';

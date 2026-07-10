@@ -194,6 +194,15 @@ class FlashcardList(_Base):
     cards: list[Flashcard] = Field(default_factory=list)
 
 
+class DailyMission(_Base):
+    skill: str = ""
+    topic: str = ""
+    duration_minutes: int = 0
+    lesson: Lesson = Field(default_factory=Lesson)
+    quiz: list[QuizItem] = Field(default_factory=list)
+    why_today: str = ""
+
+
 # ── Coding ────────────────────────────────────────────────────────────────
 class MisraViolation(_Base):
     rule: str = ""

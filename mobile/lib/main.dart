@@ -1,36 +1,41 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
+import 'navigation/app_router.dart';
 import 'providers/auth_provider.dart';
 import 'providers/career_provider.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
+import 'services/cache_service.dart';
 import 'services/career_service.dart';
 import 'services/tools_service.dart';
 import 'services/update_service.dart';
-import 'screens/splash_screen.dart';
+import 'state/theme_controller.dart';
 import 'theme/eh_theme.dart';
 import 'widgets/update_dialog.dart';
 
-void main() {
-  runApp(const EmbedHuntApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CacheService.instance.init();
+  runApp(const ProviderScope(child: EmbedHuntApp()));
 }
 
-class EmbedHuntApp extends StatefulWidget {
+class EmbedHuntApp extends ConsumerStatefulWidget {
   const EmbedHuntApp({super.key});
 
   @override
-  State<EmbedHuntApp> createState() => _EmbedHuntAppState();
+  ConsumerState<EmbedHuntApp> createState() => _EmbedHuntAppState();
 }
 
-class _EmbedHuntAppState extends State<EmbedHuntApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
+class _EmbedHuntAppState extends ConsumerState<EmbedHuntApp> {
   final _updateService = UpdateService();
   Timer? _updateTimer;
   bool _dialogOpen = false;
 
+  // Legacy provider-based services (kept for screens not yet migrated).
   late final ApiClient _api;
   late final AuthService _authService;
   late final CareerService _careerService;
@@ -53,7 +58,7 @@ class _EmbedHuntAppState extends State<EmbedHuntApp> {
   Future<void> _checkForUpdate() async {
     if (_dialogOpen) return;
     final status = await _updateService.checkForUpdate();
-    final ctx = _navigatorKey.currentContext;
+    final ctx = rootNavigatorKey.currentContext;
     if (!mounted ||
         ctx == null ||
         !status.hasUpdate ||
@@ -78,20 +83,22 @@ class _EmbedHuntAppState extends State<EmbedHuntApp> {
 
   @override
   Widget build(BuildContext context) {
+    final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider(_authService)),
         ChangeNotifierProvider(create: (_) => CareerProvider(_careerService)),
         Provider<ToolsService>.value(value: _toolsService),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'EMBEDHUNT AI',
         debugShowCheckedModeBanner: false,
         theme: EHTheme.light(),
         darkTheme: EHTheme.dark(),
-        themeMode: ThemeMode.dark,
-        navigatorKey: _navigatorKey,
-        home: const SplashScreen(),
+        themeMode: themeMode,
+        routerConfig: router,
       ),
     );
   }

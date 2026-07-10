@@ -1,128 +1,158 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'colors.dart';
-
-/// EMBEDHUNT AI Typography System.
-/// Display → Space Grotesk · Body → Inter · Code → JetBrains Mono.
-/// Every text style is defined here — never build a TextStyle inline.
+/// EMBEDHUNT AI Typography System (v6).
+/// Display → Space Grotesk · Body/UI → Inter · Code → JetBrains Mono.
+///
+/// Styles are exposed as color-less getters; apply a color at the call site
+/// via [EHType.colored] or let the surrounding theme / DefaultTextStyle supply
+/// it. Never build a TextStyle inline.
 class EHType {
   EHType._();
 
   // ── Display (Space Grotesk) ──────────────────────────────────
-  static TextStyle heroNumber(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 56,
-        fontWeight: FontWeight.w700,
-        height: 1.0,
-        letterSpacing: -1.5,
-        color: c,
+  static TextStyle get displayXL => GoogleFonts.spaceGrotesk(
+        fontSize: 64,
+        fontWeight: FontWeight.w800,
+        height: 0.95,
+        letterSpacing: -3.0,
       );
 
-  static TextStyle displayLarge(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 34,
+  static TextStyle get displayLG => GoogleFonts.spaceGrotesk(
+        fontSize: 48,
+        fontWeight: FontWeight.w800,
+        height: 1.0,
+        letterSpacing: -2.0,
+      );
+
+  static TextStyle get displayMD => GoogleFonts.spaceGrotesk(
+        fontSize: 36,
+        fontWeight: FontWeight.w700,
+        height: 1.05,
+        letterSpacing: -1.5,
+      );
+
+  static TextStyle get displaySM => GoogleFonts.spaceGrotesk(
+        fontSize: 28,
         fontWeight: FontWeight.w700,
         height: 1.1,
-        letterSpacing: -0.8,
-        color: c,
-      );
-
-  static TextStyle displayMedium(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 26,
-        fontWeight: FontWeight.w700,
-        height: 1.15,
-        letterSpacing: -0.5,
-        color: c,
-      );
-
-  static TextStyle scoreDisplay(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 40,
-        fontWeight: FontWeight.w700,
-        height: 1.0,
         letterSpacing: -1.0,
-        color: c,
       );
 
-  // ── Headings (Space Grotesk) ─────────────────────────────────
-  static TextStyle h1(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
+  // ── Headings (Inter) ─────────────────────────────────────────
+  static TextStyle get h1 => GoogleFonts.inter(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        letterSpacing: -0.5,
+      );
+
+  static TextStyle get h2 => GoogleFonts.inter(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
         height: 1.25,
         letterSpacing: -0.3,
-        color: c,
       );
 
-  static TextStyle h2(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 18,
+  static TextStyle get h3 => GoogleFonts.inter(
+        fontSize: 17,
         fontWeight: FontWeight.w600,
         height: 1.3,
-        color: c,
+        letterSpacing: -0.2,
       );
 
-  static TextStyle cardTitle(Color c) => GoogleFonts.spaceGrotesk(
-        fontSize: 16,
+  static TextStyle get h4 => GoogleFonts.inter(
+        fontSize: 15,
         fontWeight: FontWeight.w600,
-        height: 1.3,
-        color: c,
+        height: 1.35,
+      );
+
+  static TextStyle get h5 => GoogleFonts.inter(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
       );
 
   // ── Body (Inter) ─────────────────────────────────────────────
-  static TextStyle bodyLarge(Color c) => GoogleFonts.inter(
+  static TextStyle get bodyLG => GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
-        color: c,
       );
 
-  static TextStyle body(Color c) => GoogleFonts.inter(
+  static TextStyle get bodyMD => GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.5,
-        color: c,
       );
 
-  static TextStyle bodyStrong(Color c) => GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        height: 1.45,
-        color: c,
-      );
-
-  static TextStyle caption(Color c) => GoogleFonts.inter(
-        fontSize: 12,
+  static TextStyle get bodySM => GoogleFonts.inter(
+        fontSize: 13,
         fontWeight: FontWeight.w400,
-        height: 1.4,
-        color: c,
+        height: 1.45,
       );
 
-  static TextStyle label(Color c) => GoogleFonts.inter(
-        fontSize: 11,
+  // ── Labels (Inter) ───────────────────────────────────────────
+  static TextStyle get labelLG => GoogleFonts.inter(
+        fontSize: 13,
         fontWeight: FontWeight.w600,
         height: 1.3,
         letterSpacing: 0.5,
-        color: c,
       );
 
-  static TextStyle overline(Color c) => GoogleFonts.inter(
+  static TextStyle get labelMD => GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+        letterSpacing: 0.8,
+      );
+
+  static TextStyle get labelSM => GoogleFonts.inter(
         fontSize: 10,
         fontWeight: FontWeight.w700,
         height: 1.2,
         letterSpacing: 1.2,
-        color: c,
       );
 
-  static TextStyle button(Color c) => GoogleFonts.inter(
-        fontSize: 15,
+  // ── Caption (Inter) ──────────────────────────────────────────
+  static TextStyle get caption => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        height: 1.4,
+        letterSpacing: 0.2,
+      );
+
+  static TextStyle get captionB => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        height: 1.4,
+        letterSpacing: 0.2,
+      );
+
+  // ── Buttons (Inter) ──────────────────────────────────────────
+  static TextStyle get button => GoogleFonts.inter(
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         height: 1.2,
-        letterSpacing: 0.2,
-        color: c,
+        letterSpacing: 0.3,
+      );
+
+  static TextStyle get buttonSM => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+        letterSpacing: 0.3,
       );
 
   // ── Code (JetBrains Mono) ────────────────────────────────────
-  static TextStyle code(Color c) => GoogleFonts.jetBrainsMono(
+  static TextStyle get mono => GoogleFonts.jetBrainsMono(
         fontSize: 13,
         fontWeight: FontWeight.w400,
         height: 1.5,
-        color: c,
       );
+
+  /// Apply [color] to any base style. Prefer this over `.copyWith(color:)`
+  /// at call sites so intent stays obvious.
+  static TextStyle colored(TextStyle base, Color color) =>
+      base.copyWith(color: color);
 }
