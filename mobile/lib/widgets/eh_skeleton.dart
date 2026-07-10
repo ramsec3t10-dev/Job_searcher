@@ -60,28 +60,28 @@ class DashboardSkeleton extends StatelessWidget {
         children: [
           const EHSkeleton(width: 160, height: 22),
           const SizedBox(height: 24),
-          EHSkeleton(
+          const EHSkeleton(
               height: 190, radius: EHSpacing.radiusLg, width: double.infinity),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
               const SizedBox(width: 12),
-              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
               const SizedBox(width: 12),
-              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
             ],
           ),
           const SizedBox(height: 24),
           const EHSkeleton(width: 140, height: 20),
           const SizedBox(height: 16),
-          EHSkeleton(
+          const EHSkeleton(
               height: 120, radius: EHSpacing.radiusLg, width: double.infinity),
         ],
       ),
@@ -131,7 +131,7 @@ class JobCardSkeleton extends StatelessWidget {
           children: [
             Row(
               children: [
-                EHSkeleton(width: 44, height: 44, radius: EHSpacing.radiusMd),
+                const EHSkeleton(width: 44, height: 44, radius: EHSpacing.radiusMd),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -185,7 +185,7 @@ class ProfileSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          EHSkeleton(
+          const EHSkeleton(
               height: 140, radius: EHSpacing.radiusLg, width: double.infinity),
           const SizedBox(height: 20),
           const EHSkeleton(width: 140, height: 18),
