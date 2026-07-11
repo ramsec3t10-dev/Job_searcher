@@ -39,6 +39,8 @@ services:
     build:
       context: ../..
       dockerfile: deployment/docker/Dockerfile.backend
+    env_file:
+      - ../../backend/.env
     environment:
       APP_ENV: ${APP_ENV:-production}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-embedhunt}:${POSTGRES_PASSWORD:-embedhunt}@db:5432/${POSTGRES_DB:-embedhunt}
@@ -46,7 +48,6 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       SECRET_KEY: ${SECRET_KEY:-change-me-in-prod-minimum-32-characters!!}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
     depends_on:
       db:
         condition: service_healthy
