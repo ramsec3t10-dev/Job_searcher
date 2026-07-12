@@ -342,9 +342,9 @@ async def test_mentor_rate_limit_enforced(monkeypatch):
             assert r.status_code == 200, f"call {i} should pass"
         r = await c.post(f"{API}/mentor/chat", json={"message": "one too many"}, headers=_auth())
     assert r.status_code == 429
-    d = r.json()
+    d = r.json()["detail"]
     assert d["error"] == "rate_limited"
-    assert d["fallback_available"] is False
+    assert "retry_after_seconds" in d
 
 
 # ── Resume score / rewrite: real sqlite session (exercises the DB-write path) ─
