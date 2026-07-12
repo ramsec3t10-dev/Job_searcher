@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
 
 import 'navigation/app_router.dart';
 import 'providers/auth_provider.dart';
@@ -86,11 +87,17 @@ class _EmbedHuntAppState extends ConsumerState<EmbedHuntApp> {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    return MultiProvider(
+    return provider.MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider(_authService)),
-        ChangeNotifierProvider(create: (_) => CareerProvider(_careerService)),
-        Provider<ToolsService>.value(value: _toolsService),
+        provider.ChangeNotifierProvider(
+          create: (_) => AuthProvider(_authService),
+        ),
+        provider.ChangeNotifierProvider(
+          create: (_) => CareerProvider(_careerService),
+        ),
+        provider.Provider<ToolsService>.value(
+          value: _toolsService,
+        ),
       ],
       child: MaterialApp.router(
         title: 'EMBEDHUNT AI',
