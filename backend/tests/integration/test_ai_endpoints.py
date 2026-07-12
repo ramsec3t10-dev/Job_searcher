@@ -334,6 +334,8 @@ async def test_code_review_size_limit(monkeypatch):
 @pytest.mark.asyncio
 async def test_mentor_rate_limit_enforced(monkeypatch):
     monkeypatch.setattr("app.agents.mentor_agent.MentorAgent", FakeMentorAgent)
+    from app.api.v1.rate_limit import _limiter
+    _limiter._mem.clear()
     async with _client() as c:
         for i in range(20):
             r = await c.post(f"{API}/mentor/chat", json={"message": f"m{i}"}, headers=_auth())
