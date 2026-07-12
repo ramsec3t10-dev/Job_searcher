@@ -9,7 +9,7 @@ class _StubBedrock:
     def __init__(self):
         self.calls = []
 
-    async def invoke_mode(self,model_id,messages,system=None,max_tokens=1024,temperature=0.4,timeout=None,task=None):
+    async def invoke_model(self,model_id,messages,system=None,max_tokens=1024,temperature=0.4,timeout=None,task=None):
         self.calls.append({ "model": model_id, "messages": messages, "system": system, "task": task, })
         return {
             "content": '{"skills": ["c", "freertos"], "total_years": 6}',
