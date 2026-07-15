@@ -1,0 +1,45 @@
+name: Deploy Backend to EC2
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+
+          script: |
+            set -e
+
+            cd ~/Job_searcher
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building containers..."
+            docker compose -f deployment/docker/docker-compose.yml build
+
+            echo "Starting containers..."
+            docker compose -f deployment/docker/docker-compose.yml up -d
+
+            echo "Waiting for API..."
+            sleep 15
+
+            echo "Health Check..."
+            curl --fail http://localhost/health
+
+            echo "Deployment Successful!"
