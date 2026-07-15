@@ -64,7 +64,6 @@ def test_weekly_memory_cleanup_summarizes_and_prunes(monkeypatch):
     monkeypatch.setattr(ai_tasks, "AsyncSessionLocal", _fake_session_factory)
     monkeypatch.setattr(ai_tasks, "get_all_users", _users("u1", "u2", "u3"))
     monkeypatch.setattr(ai_tasks, "MemoryRepository", FakeMemoryRepo)
-    monkeypatch.setattr(ai_tasks, "AIRouter", lambda *a, **k: object())
 
     result = ai_tasks.weekly_memory_cleanup()
     assert result == 3

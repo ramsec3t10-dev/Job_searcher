@@ -9,7 +9,6 @@ from __future__ import annotations
 from app.agents.base_agent import BaseAgent
 from app.agents.models import AnswerEvaluation, InterviewQuestion, QuestionList
 from app.llm.context_builder import ContextBuilder
-from app.llm.model_selector import TaskType
 from app.llm.prompts import ANSWER_EVALUATOR, QUESTION_GENERATOR
 from app.llm.response_parser import parse_structured
 
@@ -25,7 +24,8 @@ class InterviewAgent(BaseAgent):
         user = QUESTION_GENERATOR.render(
             skill=skill, company=company, difficulty=difficulty, count=count
         )
-        raw = await self._call(TaskType.INTERVIEW, QUESTION_GENERATOR.system_prompt, user, 2000)
+        # Phase 4: orchestrator-routed (interview_questions → open-model tier).
+        raw = await self._handle("interview_questions", QUESTION_GENERATOR.system_prompt, user, 2000)
         return parse_structured(raw, QuestionList).questions
 
     async def evaluate_answer(
@@ -33,7 +33,8 @@ class InterviewAgent(BaseAgent):
     ) -> AnswerEvaluation:
         self.user_id = user_id
         user = ANSWER_EVALUATOR.render(skill=skill, question=question, answer=answer)
-        raw = await self._call(TaskType.INTERVIEW, ANSWER_EVALUATOR.system_prompt, user, 800)
+        # Phase 4: orchestrator-routed (interview_evaluation → Claude tier).
+        raw = await self._handle("interview_evaluation", ANSWER_EVALUATOR.system_prompt, user, 800)
         result: AnswerEvaluation = parse_structured(raw, AnswerEvaluation)
 
         # Fold the result back into the twin when one exists.

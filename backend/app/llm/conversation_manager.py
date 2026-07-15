@@ -12,8 +12,8 @@ from sqlalchemy import String, Text, delete, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.config.logging import get_logger
+from app.config.settings import settings
 from app.database.base import BaseModel
-from app.llm.model_selector import TaskType
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -100,7 +100,7 @@ class ConversationManager:
                     )
                 )
             ).scalar_one()
-            if count <= threshold or self._router is None:
+            if count <= threshold or not settings.LLM_ENRICHMENT_ENABLED:
                 return None
             rows = (
                 await session.execute(
@@ -114,19 +114,21 @@ class ConversationManager:
                 )
             ).scalars().all()
             transcript = "\n".join(f"{r.role}: {r.content}" for r in rows)
-            reply = await self._router.route(
-                TaskType.SUMMARIZATION,
-                [
-                    {
-                        "role": "user",
-                        "content": f"Summarize this conversation concisely, preserving key facts, "
-                        f"preferences and decisions:\n\n{transcript}",
-                    }
-                ],
-                system="You are a precise conversation summarizer.",
-                max_tokens=512,
+            # Phase 4: routes through the orchestrator (conversation_summarize
+            # → open-model tier) instead of a direct Bedrock call.
+            from app.orchestrator.router import get_orchestrator
+
+            result = await get_orchestrator().handle(
+                "conversation_summarize",
+                {
+                    "prompt": f"Summarize this conversation concisely, preserving key facts, "
+                    f"preferences and decisions:\n\n{transcript}",
+                    "system": "You are a precise conversation summarizer.",
+                    "max_tokens": 512,
+                },
+                {"user_id": user_id, "db": session},
             )
-            summary = reply.content
+            summary = result.text
             session.add(
                 Conversation(
                     user_id=user_id,

@@ -13,7 +13,11 @@ from app.models.feedback import FeedbackEvent, FeedbackType
 from app.models.daily_checkin import DailyCheckin
 from app.models.app_version import AppVersion
 from app.models.memory import MemoryEntry
+from app.models.knowledge_graph import SkillNode, SkillEdge, RoleRequirement, EdgeType
+from app.models.orchestrator_usage import AiUsageLog
+from app.models.ai_interaction import AiInteraction
 __all__ = ["User","Resume","ResumeStatus","CandidateProfile","Application","ApplicationStatus",
            "ApplicationOutcome","JobRecommendation","MatchTier","Company","Notification",
            "NotificationType","NotificationChannel","LearningRoadmap","InterviewSession","CareerTwin",
-           "DiscoveredJob","FeedbackEvent","FeedbackType","DailyCheckin","AppVersion","MemoryEntry"]
+           "DiscoveredJob","FeedbackEvent","FeedbackType","DailyCheckin","AppVersion","MemoryEntry",
+           "SkillNode","SkillEdge","RoleRequirement","EdgeType","AiUsageLog","AiInteraction"]

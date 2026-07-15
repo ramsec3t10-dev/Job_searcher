@@ -35,14 +35,17 @@ async def db():
 
 
 def _mock_advice(agent, advice: str) -> AsyncMock:
+    # Phase 4: advise() routes through the orchestrator (mentor_chat → Claude tier).
+    from unittest.mock import MagicMock
+
+    from app.orchestrator.engine_base import EngineResult
+
     payload = {"advice": advice, "action_items": ["step 1"], "priority": "high"}
-    response = AIResponse(
-        content=json.dumps(payload), model_used="claude-sonnet-4-6",
-        input_tokens=10, output_tokens=20, cost_usd=0.0002,
-        latency_ms=5.0, cached=False, task_type=TaskType.MENTORING,
-    )
-    mock = AsyncMock(return_value=response)
-    agent.router.route = mock
+    mock = AsyncMock(return_value=EngineResult(
+        text=json.dumps(payload), engine_used="claude:claude-sonnet-4-6",
+        cost_estimate_usd=0.0002, tokens_in=10, tokens_out=20))
+    agent.orchestrator = MagicMock()
+    agent.orchestrator.handle = mock
     return mock
 
 

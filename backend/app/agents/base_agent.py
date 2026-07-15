@@ -18,9 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.logging import get_logger
 from app.llm.conversation_manager import ConversationManager
-from app.llm.cost_tracker import CostTracker
-from app.llm.model_selector import TaskType
-from app.llm.router import AIRouter
 from app.repositories.career_twin_repository import CareerTwinRepository
 from app.repositories.memory_repository import MemoryRepository
 from app.services.career_twin_service import CareerTwinService
@@ -31,32 +28,34 @@ logger = get_logger(__name__)
 class BaseAgent:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.router = AIRouter()
+        # Phase 4: every agent routes AI through the orchestrator via _handle().
+        # No agent holds a Bedrock/model-provider client anymore — providers are
+        # fully behind the orchestrator (caching, gating, cost logging, routing).
+        from app.orchestrator.router import get_orchestrator
+
+        self.orchestrator = get_orchestrator()
         self.twin_repo = CareerTwinRepository(db)
-        self.memory_repo = MemoryRepository(db, router=self.router)
+        self.memory_repo = MemoryRepository(db)
         self.twin_service = CareerTwinService(db)
-        self.conversation_manager = ConversationManager(router=self.router)
-        self.cost_tracker = CostTracker()
-        # Set per public method call so _call/_store_memory know the actor.
+        self.conversation_manager = ConversationManager()
+        # Set per public method call so _handle/_store_memory know the actor.
         self.user_id: str = ""
 
-    async def _call(self, task: TaskType, system: str, user: str, max_tokens: int) -> str:
-        """Route a single-turn request, track its cost, return raw content.
+    async def _handle(self, task: str, system: str, user: str, max_tokens: int) -> str:
+        """Route a single-turn request through the AI Orchestrator; return raw text.
 
-        ``user_id`` is intentionally NOT passed to the router (which would make
-        it track usage too); cost tracking is done here exactly once.
+        Drop-in replacement for :meth:`_call` (same raw-string contract, so all
+        downstream ``parse_structured`` / ``_store_memory`` is unchanged) that
+        goes through the full engine chain — rule → knowledge-graph → cache →
+        open-model (gated) → Claude — instead of hitting Bedrock directly. Cost is
+        logged to ``AiUsageLog`` with ``user_id`` by the orchestrator.
         """
-        response = await self.router.route(
+        result = await self.orchestrator.handle(
             task,
-            [{"role": "user", "content": user}],
-            system,
-            max_tokens,
+            {"prompt": user, "system": system, "max_tokens": max_tokens},
+            {"user_id": self.user_id, "db": self.db},
         )
-        try:
-            await self.cost_tracker.track(self.user_id, response, db=self.db)
-        except Exception as exc:  # noqa: BLE001 — cost tracking must never break a request
-            logger.warning("agent_cost_track_failed", error=str(exc))
-        return response.content
+        return result.text
 
     async def _store_memory(self, summary: str, memory_type: str, importance: int, tags: list) -> None:
         try:

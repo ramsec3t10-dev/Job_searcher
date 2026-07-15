@@ -8,7 +8,6 @@ from __future__ import annotations
 from app.agents.base_agent import BaseAgent
 from app.agents.models import GapAnalysis, JobMatch
 from app.llm.context_builder import ContextBuilder
-from app.llm.model_selector import TaskType
 from app.llm.prompts import GAP_ANALYSIS, JOB_MATCH
 from app.llm.response_parser import parse_structured
 from app.models.career_twin import CareerTwin
@@ -34,7 +33,9 @@ class MatchingAgent(BaseAgent):
         context = ContextBuilder.for_job_matching(twin, job)
         profile, job_str = self._profile_and_job(context, job)
         user = JOB_MATCH.render(candidate_profile=profile, job=job_str)
-        raw = await self._call(TaskType.MATCHING, JOB_MATCH.system_prompt, user, 1500)
+        # Phase 4: routed through the orchestrator (match_explanation → open-model
+        # tier, Claude on low confidence) instead of a direct Bedrock call.
+        raw = await self._handle("match_explanation", JOB_MATCH.system_prompt, user, 1500)
         result: JobMatch = parse_structured(raw, JobMatch)
         await self._store_memory(
             f"Matched {job.get('title', 'job')}: score {result.score}, action {result.recommended_action}",
@@ -49,5 +50,6 @@ class MatchingAgent(BaseAgent):
         context = ContextBuilder.for_job_matching(twin, job)
         profile, job_str = self._profile_and_job(context, job)
         user = GAP_ANALYSIS.render(candidate_profile=profile, job=job_str)
-        raw = await self._call(TaskType.MATCHING, GAP_ANALYSIS.system_prompt, user, 1024)
+        # Phase 4: routed through the orchestrator (gap_analysis_explanation → Claude-only).
+        raw = await self._handle("gap_analysis_explanation", GAP_ANALYSIS.system_prompt, user, 1024)
         return parse_structured(raw, GapAnalysis)

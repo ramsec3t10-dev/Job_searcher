@@ -115,25 +115,32 @@ class MemoryRepository:
             if m.created_at and m.created_at.replace(tzinfo=timezone.utc) < cutoff
             and m.full_content and (m.importance_score or 0) <= 3
         ]
-        if not stale or self.router is None:
+        from app.config.settings import settings
+
+        if not stale or not settings.LLM_ENRICHMENT_ENABLED:
             return 0
 
-        from app.llm.model_selector import TaskType
+        # Phase 4: memory compaction routes through the orchestrator
+        # (memory_summarize → open-model tier) instead of a direct Bedrock call.
+        from app.orchestrator.router import get_orchestrator
 
+        orchestrator = get_orchestrator()
         compressed = 0
         for m in stale:
             try:
-                resp = await self.router.route(
-                    TaskType.SUMMARIZATION,
-                    messages=[{
-                        "role": "user",
-                        "content": f"Summarize this memory in one sentence:\n\n{m.full_content}",
-                    }],
-                    system="You compress career-history notes into a single concise sentence.",
-                    max_tokens=120,
-                    user_id=user_id,
+                result = await orchestrator.handle(
+                    "memory_summarize",
+                    {
+                        "prompt": f"Summarize this memory in one sentence:\n\n{m.full_content}",
+                        "system": "You compress career-history notes into a single concise sentence.",
+                        "max_tokens": 120,
+                    },
+                    {"user_id": user_id, "db": self.db},
                 )
-                m.summary = resp.content.strip()
+                summary = (result.text or "").strip()
+                if not summary:
+                    continue  # never overwrite with an empty fallback
+                m.summary = summary
                 m.full_content = None  # drop the bulky original
                 compressed += 1
             except Exception:  # pragma: no cover - defensive; never fail a cron job

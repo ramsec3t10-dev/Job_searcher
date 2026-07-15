@@ -10,7 +10,6 @@ from typing import Optional
 from app.agents.base_agent import BaseAgent
 from app.agents.models import SalaryEstimate
 from app.llm.context_builder import ContextBuilder
-from app.llm.model_selector import TaskType
 from app.llm.prompts import SALARY_ESTIMATOR
 from app.llm.response_parser import parse_structured
 
@@ -32,5 +31,6 @@ class SalaryAgent(BaseAgent):
             current_lpa=context.get("current_salary", 0.0),
             profile=profile,
         )
-        raw = await self._call(TaskType.SALARY, SALARY_ESTIMATOR.system_prompt, user, 800)
+        # Phase 4: orchestrator-routed (salary_estimate → Claude tier, money advice).
+        raw = await self._handle("salary_estimate", SALARY_ESTIMATOR.system_prompt, user, 800)
         return parse_structured(raw, SalaryEstimate)

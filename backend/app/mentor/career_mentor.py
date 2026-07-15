@@ -1,22 +1,13 @@
-"""EMBEDHUNT AI — Career Mentor Engine (Module 15).
+"""EMBEDHUNT AI — Career Mentor deterministic advisor (Module 15).
 
-A conversational mentor grounded in the candidate's CareerTwin. When an
-Anthropic API key is configured it uses Claude; otherwise it degrades
-gracefully to a deterministic, context-aware advisor so the feature is always
-available (including offline / no-key deployments).
+Phase 4: the LLM path was removed — mentor chat now routes through the AI
+Orchestrator (``mentor_chat`` task) via ``MentorService``. This module is
+retained purely as the **deterministic, CareerTwin-grounded fallback** used when
+the orchestrator yields nothing, so the feature is always available (including
+offline / no-key deployments). No direct model-provider calls live here anymore.
 """
 from __future__ import annotations
 
-import json
-
-import httpx
-
-from app.config.logging import get_logger
-from app.config.settings import settings
-
-logger = get_logger(__name__)
-
-_ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 _SYSTEM_PROMPT = (
     "You are EmbedHunt's AI Career Mentor for embedded-systems and firmware "
     "engineers. Be concise, specific and encouraging. Ground every answer in "
@@ -26,52 +17,6 @@ _SYSTEM_PROMPT = (
 
 
 class CareerMentorEngine:
-    def __init__(self):
-        self.api_key = settings.ANTHROPIC_API_KEY
-        self.model = settings.MENTOR_MODEL
-
-    @property
-    def uses_llm(self) -> bool:
-        return bool(self.api_key)
-
-    async def answer(self, message: str, context: dict, history: list[dict] | None = None) -> dict:
-        if self.uses_llm:
-            try:
-                reply = await self._ask_claude(message, context, history or [])
-                return {"reply": reply, "source": "claude", "model": self.model}
-            except Exception as exc:  # noqa: BLE001 — always fall back, never 500
-                logger.warning("mentor_llm_failed", error=str(exc))
-        return {"reply": self._fallback(message, context), "source": "rule_based", "model": None}
-
-    # ── LLM path ──────────────────────────────────────────────────────────
-    async def _ask_claude(self, message: str, context: dict, history: list[dict]) -> str:
-        messages = [
-            {"role": h.get("role", "user"), "content": h.get("content", "")}
-            for h in history
-            if h.get("content")
-        ]
-        messages.append({
-            "role": "user",
-            "content": f"Candidate context:\n{json.dumps(context, indent=2)}\n\nQuestion: {message}",
-        })
-        payload = {
-            "model": self.model,
-            "max_tokens": settings.MENTOR_MAX_TOKENS,
-            "system": _SYSTEM_PROMPT,
-            "messages": messages,
-        }
-        headers = {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(_ANTHROPIC_URL, json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-        blocks = data.get("content", [])
-        return "".join(b.get("text", "") for b in blocks if b.get("type") == "text").strip()
-
     # ── Deterministic fallback ────────────────────────────────────────────
     def _fallback(self, message: str, ctx: dict) -> str:
         q = message.lower()

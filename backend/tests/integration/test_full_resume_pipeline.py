@@ -47,6 +47,20 @@ def _mock_route(agent, payload: dict) -> AsyncMock:
     return mock
 
 
+def _mock_handle(agent, payload: dict) -> AsyncMock:
+    """Mock the orchestrator path for agent methods migrated in Phase 4."""
+    from unittest.mock import MagicMock
+
+    from app.orchestrator.engine_base import EngineResult
+
+    mock = AsyncMock(return_value=EngineResult(
+        text=json.dumps(payload), engine_used="together:mock", confidence=0.9,
+        cost_estimate_usd=0.0001, tokens_in=10, tokens_out=20))
+    agent.orchestrator = MagicMock()
+    agent.orchestrator.handle = mock
+    return mock
+
+
 async def _memory_count(db, user_id: str) -> int:
     stmt = select(func.count()).select_from(MemoryEntry).where(MemoryEntry.user_id == user_id)
     return (await db.execute(stmt)).scalar_one()
@@ -56,9 +70,9 @@ async def _memory_count(db, user_id: str) -> int:
 async def test_full_resume_pipeline(db):
     user_id = "user-pipeline"
 
-    # 1. Parse resume.
+    # 1. Parse resume (Phase 4: orchestrator-routed).
     resume_agent = ResumeAgent(db)
-    _mock_route(resume_agent, {
+    _mock_handle(resume_agent, {
         "skills": ["c", "freertos", "can"], "total_years": 6,
         "contact": {"name": "Ram", "email": "ram@example.com"},
         "summary": "Embedded engineer",
@@ -72,17 +86,17 @@ async def test_full_resume_pipeline(db):
     assert twin is not None
     assert twin.user_id == user_id
 
-    # 3. Score resume against a job.
-    _mock_route(resume_agent, {
+    # 3. Score resume against a job (Phase 4: orchestrator-routed).
+    _mock_handle(resume_agent, {
         "score": 78, "ats_score": 70, "missing_keywords": ["autosar"],
         "strengths": ["rtos"], "improvements": ["add metrics"],
     })
     score = await resume_agent.score("resume text", "AUTOSAR firmware role", user_id)
     assert score.score == 78
 
-    # 4. Gap analysis.
+    # 4. Gap analysis (Phase 4: routed through the orchestrator).
     matching_agent = MatchingAgent(db)
-    _mock_route(matching_agent, {
+    _mock_handle(matching_agent, {
         "critical_gaps": ["autosar"], "estimated_upskill_weeks": 8,
         "learning_priority": ["autosar"], "immediate_focus": "autosar",
         "gap_summary": "Learn AUTOSAR",

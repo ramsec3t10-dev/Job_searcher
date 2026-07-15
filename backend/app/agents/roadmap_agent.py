@@ -8,7 +8,6 @@ from __future__ import annotations
 from app.agents.base_agent import BaseAgent
 from app.agents.models import Roadmap
 from app.llm.context_builder import ContextBuilder
-from app.llm.model_selector import TaskType
 from app.llm.prompts import ROADMAP_GENERATOR
 from app.llm.response_parser import parse_structured
 
@@ -33,7 +32,8 @@ class RoadmapAgent(BaseAgent):
             career_twin=career_twin,
             interview_history=interview_history,
         )
-        raw = await self._call(TaskType.ROADMAP, ROADMAP_GENERATOR.system_prompt, user, 3000)
+        # Phase 4: orchestrator-routed (roadmap_draft → open-model tier).
+        raw = await self._handle("roadmap_draft", ROADMAP_GENERATOR.system_prompt, user, 3000)
         result: Roadmap = parse_structured(raw, Roadmap)
         await self._store_memory(
             f"Roadmap: {result.total_weeks}wk plan for {target_job.get('title')}",

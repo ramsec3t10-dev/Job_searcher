@@ -20,7 +20,6 @@ from sqlalchemy import distinct, select
 from app.config.logging import get_logger
 from app.database.session import AsyncSessionLocal
 from app.llm.cost_tracker import AIUsageLog
-from app.llm.router import AIRouter
 from app.models.user import User
 from app.repositories.memory_repository import MemoryRepository
 from app.scheduler.celery_app import celery_app
@@ -66,7 +65,7 @@ async def _daily_twin_recompute() -> int:
 
 async def _weekly_memory_cleanup() -> int:
     async with AsyncSessionLocal() as session:
-        memory_repo = MemoryRepository(session, router=AIRouter())
+        memory_repo = MemoryRepository(session)
         users = await get_all_users(session)
         for user_id in users:
             try:

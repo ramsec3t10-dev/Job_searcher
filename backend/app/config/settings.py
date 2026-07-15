@@ -70,6 +70,59 @@ class Settings(BaseSettings):
     LLM_ENRICHMENT_ENABLED: bool = True  # master toggle for all AI enrichment
     LLM_ENRICHMENT_TIMEOUT_SECONDS: int = 10  # if AI takes longer, use fallback
 
+    # ── AI Orchestrator (Phase 1) ───────────────────────────────────────────
+    # Per-task exact-match cache TTL (seconds) for the orchestrator. Tasks not
+    # listed fall back to a 1-day (86400s) default; a value of 0 disables
+    # caching for that task. ORCHESTRATOR_ENABLE_CACHE is the master on/off
+    # switch for the orchestrator's cache layer.
+    ORCHESTRATOR_CACHE_TTL: dict[str, int] = {}
+    ORCHESTRATOR_ENABLE_CACHE: bool = True
+    # Semantic (embedding-similarity) cache: serve a near-duplicate cached result
+    # when the exact-match key misses. Uses app.ai.embeddings (offline-capable).
+    ORCHESTRATOR_SEMANTIC_CACHE: bool = True
+    ORCHESTRATOR_SEMANTIC_CACHE_THRESHOLD: float = 0.92
+    # Bound the per-task embedding index (cosine scan cost + memory). Oldest
+    # entries are trimmed past this cap; entries also expire with the cache TTL.
+    ORCHESTRATOR_SEMANTIC_CACHE_MAX_PER_TASK: int = 500
+
+    # ── AI Orchestrator — Hosted Open-Model Engine (Phase 3) ────────────────
+    # Mid-tier engine between the knowledge graph and Claude, calling a hosted
+    # open model via Together AI's OpenAI-compatible API. The key is sourced
+    # from the environment only (never hardcoded); when unset the engine stays
+    # dormant and the orchestrator falls straight through to Claude.
+    TOGETHER_API_KEY: Optional[str] = None
+    TOGETHER_BASE_URL: str = "https://api.together.xyz/v1"
+    # Default open model (per-task overrides live in task_registry OPEN_MODEL_TASK_MODELS).
+    TOGETHER_MODEL: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    # Provider/endpoint are pluggable: keep "together" (hosted) OR point at a
+    # local OpenAI-compatible server (Ollama/vLLM) for a genuinely self-hosted
+    # open-model tier — same code path, no key required for local.
+    #   e.g. OPEN_MODEL_PROVIDER=local  OPEN_MODEL_BASE_URL=http://localhost:11434/v1
+    OPEN_MODEL_PROVIDER: str = "together"          # "together" | "local" | any label
+    OPEN_MODEL_BASE_URL: Optional[str] = None      # overrides TOGETHER_BASE_URL when set
+    OPEN_MODEL_API_KEY: Optional[str] = None       # overrides TOGETHER_API_KEY (local: leave unset)
+    ORCHESTRATOR_ENABLE_HOSTED_MODEL: bool = True  # master on/off for the open-model engine
+    # Below this heuristic confidence the hosted answer is discarded and the
+    # request escalates to Claude (see hosted_model_engine._score_confidence).
+    ORCHESTRATOR_HOSTED_MODEL_MIN_CONFIDENCE: float = 0.6
+    HOSTED_MODEL_TIMEOUT_SECONDS: float = 30.0
+    HOSTED_MODEL_MAX_TOKENS: int = 1024
+    HOSTED_MODEL_TEMPERATURE: float = 0.3
+
+    # ── AI Orchestrator — Training capture & distillation (Phase 5) ─────────
+    # Off by default (privacy-safe). When ON, every paid engine result is
+    # captured (PII-scrubbed) to ai_interaction as training data — but ONLY for
+    # requests that carry user consent (context["consent"]=True).
+    ORCHESTRATOR_CAPTURE_TRAINING_DATA: bool = False
+    # Shadow routing: after serving the real answer, also run a candidate model
+    # (your own fine-tune) and log its output WITHOUT serving it — so you gather
+    # candidate-vs-incumbent data risk-free. Requires capture to be on.
+    ORCHESTRATOR_SHADOW_MODEL_ENABLED: bool = False
+    SHADOW_MODEL_PROVIDER: str = "shadow"
+    SHADOW_MODEL_BASE_URL: Optional[str] = None   # your candidate inference endpoint (OpenAI-compatible)
+    SHADOW_MODEL_API_KEY: Optional[str] = None
+    SHADOW_MODEL_NAME: str = "embedhunt-distill-v0"
+
     SMTP_HOST: Optional[str] = None
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None

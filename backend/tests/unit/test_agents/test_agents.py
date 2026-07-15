@@ -79,12 +79,43 @@ def _mock_route(agent, payload: dict) -> AsyncMock:
     return mock
 
 
+def _mock_handle(agent, payload: dict) -> AsyncMock:
+    """Replace a migrated agent's orchestrator.handle with a mock returning ``payload``.
+
+    Used for call sites migrated (Phase 4) from ``router.route`` to
+    ``orchestrator.handle``.
+    """
+    from app.orchestrator.engine_base import EngineResult
+
+    mock = AsyncMock(return_value=EngineResult(
+        text=json.dumps(payload), engine_used="together:mock", confidence=0.9,
+        cost_estimate_usd=0.0001, tokens_in=10, tokens_out=20))
+    from unittest.mock import MagicMock
+
+    agent.orchestrator = MagicMock()
+    agent.orchestrator.handle = mock
+    return mock
+
+
 def _sent_task(mock: AsyncMock) -> TaskType:
     return mock.await_args.args[0]
 
 
 def _sent_system(mock: AsyncMock) -> str:
     return mock.await_args.args[2]
+
+
+# Accessors for the migrated orchestrator path: handle(task, payload, context).
+def _handle_task(mock: AsyncMock) -> str:
+    return mock.await_args.args[0]
+
+
+def _handle_system(mock: AsyncMock) -> str:
+    return mock.await_args.args[1]["system"]
+
+
+def _handle_user_id(mock: AsyncMock) -> str:
+    return mock.await_args.args[2]["user_id"]
 
 
 async def _memory_count(db, user_id: str, memory_type: str) -> int:
@@ -108,15 +139,15 @@ def _twin() -> CareerTwin:
 @pytest.mark.asyncio
 async def test_resume_agent_parse(db):
     agent = ResumeAgent(db)
-    mock = _mock_route(agent, {
+    mock = _mock_handle(agent, {
         "skills": ["c", "can", "freertos"], "total_years": 6,
         "contact": {"name": "Ram", "email": "r@x.com", "phone": "1"},
     })
     result = await agent.parse("resume text", "u1")
 
     assert isinstance(result, ParsedResume)
-    assert _sent_task(mock) == TaskType.EXTRACTION
-    assert _sent_system(mock) == prompts.RESUME_PARSER.system_prompt
+    assert _handle_task(mock) == "resume_parsing"
+    assert _handle_system(mock) == prompts.RESUME_PARSER.system_prompt
     assert result.skills == ["c", "can", "freertos"]
     assert await _memory_count(db, "u1", "resume") == 1
 
@@ -124,60 +155,64 @@ async def test_resume_agent_parse(db):
 @pytest.mark.asyncio
 async def test_resume_agent_score(db):
     agent = ResumeAgent(db)
-    mock = _mock_route(agent, {"score": 72, "ats_score": 65})
+    mock = _mock_handle(agent, {"score": 72, "ats_score": 65})
     result = await agent.score("resume", "job desc", "u1")
 
     assert isinstance(result, ResumeScore)
-    assert _sent_task(mock) == TaskType.MATCHING
-    assert _sent_system(mock) == prompts.RESUME_SCORER.system_prompt
+    assert _handle_task(mock) == "resume_score"
+    assert _handle_system(mock) == prompts.RESUME_SCORER.system_prompt
     assert result.score == 72
 
 
 @pytest.mark.asyncio
 async def test_resume_agent_rewrite(db):
     agent = ResumeAgent(db)
-    mock = _mock_route(agent, {"rewritten_bullets": ["did x"], "estimated_score_improvement": 15})
+    mock = _mock_handle(agent, {"rewritten_bullets": ["did x"], "estimated_score_improvement": 15})
     result = await agent.rewrite("resume", {"description": "job"}, _twin(), "u1")
 
     assert isinstance(result, RewrittenResume)
-    assert _sent_task(mock) == TaskType.PLANNING
-    assert _sent_system(mock) == prompts.RESUME_REWRITER.system_prompt
+    assert _handle_task(mock) == "resume_rewrite"
+    assert _handle_system(mock) == prompts.RESUME_REWRITER.system_prompt
 
 
 # ── MatchingAgent ──────────────────────────────────────────────────────────
 @pytest.mark.asyncio
 async def test_matching_agent_match(db):
+    # Phase 4: match() now routes through the orchestrator (task match_explanation).
     agent = MatchingAgent(db)
-    mock = _mock_route(agent, {"score": 80, "recommended_action": "apply_now", "missing_skills": ["autosar"]})
+    mock = _mock_handle(agent, {"score": 80, "recommended_action": "apply_now", "missing_skills": ["autosar"]})
     result = await agent.match(_twin(), {"title": "FW Eng", "required_skills": ["c"]}, "u1")
 
     assert isinstance(result, JobMatch)
-    assert _sent_task(mock) == TaskType.MATCHING
-    assert _sent_system(mock) == prompts.JOB_MATCH.system_prompt
-    assert result.score == 80
+    assert mock.await_args.args[0] == "match_explanation"          # orchestrator task
+    assert mock.await_args.args[1]["system"] == prompts.JOB_MATCH.system_prompt
+    assert mock.await_args.args[2]["user_id"] == "u1"              # cost attribution
+    assert result.score == 80                                     # shape unchanged
 
 
 @pytest.mark.asyncio
 async def test_matching_agent_analyze_gaps(db):
+    # Phase 4: routes through the orchestrator (gap_analysis_explanation → Claude tier).
     agent = MatchingAgent(db)
-    mock = _mock_route(agent, {"critical_gaps": ["autosar"], "immediate_focus": "autosar"})
+    mock = _mock_handle(agent, {"critical_gaps": ["autosar"], "immediate_focus": "autosar"})
     result = await agent.analyze_gaps(_twin(), {"title": "FW Eng"}, "u1")
 
     assert isinstance(result, GapAnalysis)
-    assert _sent_task(mock) == TaskType.MATCHING
-    assert _sent_system(mock) == prompts.GAP_ANALYSIS.system_prompt
+    assert _handle_task(mock) == "gap_analysis_explanation"
+    assert _handle_system(mock) == prompts.GAP_ANALYSIS.system_prompt
+    assert _handle_user_id(mock) == "u1"
 
 
 # ── MentorAgent ────────────────────────────────────────────────────────────
 @pytest.mark.asyncio
 async def test_mentor_agent_advise(db):
     agent = MentorAgent(db)
-    mock = _mock_route(agent, {"advice": "Focus on AUTOSAR", "action_items": ["study bsw"], "priority": "high"})
+    mock = _mock_handle(agent, {"advice": "Focus on AUTOSAR", "action_items": ["study bsw"], "priority": "high"})
     result = await agent.advise("u1", "How do I grow?", "conv1")
 
     assert isinstance(result, MentorResponse)
-    assert _sent_task(mock) == TaskType.MENTORING
-    assert _sent_system(mock) == prompts.CAREER_ADVICE.system_prompt
+    assert _handle_task(mock) == "mentor_chat"
+    assert _handle_system(mock) == prompts.CAREER_ADVICE.system_prompt
     assert result.advice == "Focus on AUTOSAR"
     assert await _memory_count(db, "u1", "conversation") == 1
     # Both the user turn and the assistant reply were persisted.
@@ -190,38 +225,38 @@ async def test_mentor_agent_advise(db):
 @pytest.mark.asyncio
 async def test_mentor_agent_daily_brief(db):
     agent = MentorAgent(db)
-    mock = _mock_route(agent, {"greeting": "Morning", "focus_skill": "can", "new_jobs_count": 3})
+    mock = _mock_handle(agent, {"greeting": "Morning", "focus_skill": "can", "new_jobs_count": 3})
     result = await agent.daily_brief("u1")
 
     assert isinstance(result, DailyBrief)
-    assert _sent_task(mock) == TaskType.MENTORING
-    assert _sent_system(mock) == prompts.DAILY_BRIEF.system_prompt
+    assert _handle_task(mock) == "mentor_daily_brief"
+    assert _handle_system(mock) == prompts.DAILY_BRIEF.system_prompt
 
 
 # ── InterviewAgent ─────────────────────────────────────────────────────────
 @pytest.mark.asyncio
 async def test_interview_agent_generate_questions(db):
     agent = InterviewAgent(db)
-    mock = _mock_route(agent, {"questions": [
+    mock = _mock_handle(agent, {"questions": [
         {"text": "Explain CAN arbitration", "type": "conceptual", "difficulty": "medium"},
     ]})
     result = await agent.generate_questions("u1", "can", "Bosch", "medium")
 
     assert isinstance(result, list)
     assert result[0].text == "Explain CAN arbitration"
-    assert _sent_task(mock) == TaskType.INTERVIEW
-    assert _sent_system(mock) == prompts.QUESTION_GENERATOR.system_prompt
+    assert _handle_task(mock) == "interview_questions"
+    assert _handle_system(mock) == prompts.QUESTION_GENERATOR.system_prompt
 
 
 @pytest.mark.asyncio
 async def test_interview_agent_evaluate_answer(db):
     agent = InterviewAgent(db)
-    mock = _mock_route(agent, {"score": 70, "what_was_missing": "edge cases", "feedback": "ok"})
+    mock = _mock_handle(agent, {"score": 70, "what_was_missing": "edge cases", "feedback": "ok"})
     result = await agent.evaluate_answer("u1", "Q?", "A.", "can")
 
     assert isinstance(result, AnswerEvaluation)
-    assert _sent_task(mock) == TaskType.INTERVIEW
-    assert _sent_system(mock) == prompts.ANSWER_EVALUATOR.system_prompt
+    assert _handle_task(mock) == "interview_evaluation"
+    assert _handle_system(mock) == prompts.ANSWER_EVALUATOR.system_prompt
     assert result.score == 70
     assert await _memory_count(db, "u1", "interview") == 1
 
@@ -234,7 +269,7 @@ async def test_interview_agent_evaluate_updates_twin(db):
     await svc.get_or_create("u2")
 
     agent = InterviewAgent(db)
-    _mock_route(agent, {"score": 55, "what_was_missing": "timing", "feedback": "x"})
+    _mock_handle(agent, {"score": 55, "what_was_missing": "timing", "feedback": "x"})
     await agent.evaluate_answer("u2", "Q?", "A.", "rtos")
 
     twin = await agent.twin_repo.get_by_user("u2")
@@ -246,12 +281,12 @@ async def test_interview_agent_evaluate_updates_twin(db):
 @pytest.mark.asyncio
 async def test_roadmap_agent_generate(db):
     agent = RoadmapAgent(db)
-    mock = _mock_route(agent, {"weeks": [{"number": 1, "skill": "autosar"}], "total_weeks": 8})
+    mock = _mock_handle(agent, {"weeks": [{"number": 1, "skill": "autosar"}], "total_weeks": 8})
     result = await agent.generate("u1", {"title": "Senior FW Eng", "required_skills": ["autosar"]}, 10)
 
     assert isinstance(result, Roadmap)
-    assert _sent_task(mock) == TaskType.ROADMAP
-    assert _sent_system(mock) == prompts.ROADMAP_GENERATOR.system_prompt
+    assert _handle_task(mock) == "roadmap_draft"
+    assert _handle_system(mock) == prompts.ROADMAP_GENERATOR.system_prompt
     assert result.total_weeks == 8
     assert await _memory_count(db, "u1", "learning") == 1
 
@@ -260,12 +295,12 @@ async def test_roadmap_agent_generate(db):
 @pytest.mark.asyncio
 async def test_salary_agent_estimate(db):
     agent = SalaryAgent(db)
-    mock = _mock_route(agent, {"estimated_min_lpa": 25, "estimated_max_lpa": 40, "percentile": 60})
+    mock = _mock_handle(agent, {"estimated_min_lpa": 25, "estimated_max_lpa": 40, "percentile": 60})
     result = await agent.estimate("u1", "NXP")
 
     assert isinstance(result, SalaryEstimate)
-    assert _sent_task(mock) == TaskType.SALARY
-    assert _sent_system(mock) == prompts.SALARY_ESTIMATOR.system_prompt
+    assert _handle_task(mock) == "salary_estimate"
+    assert _handle_system(mock) == prompts.SALARY_ESTIMATOR.system_prompt
     assert result.estimated_max_lpa == 40
 
 
@@ -273,48 +308,48 @@ async def test_salary_agent_estimate(db):
 @pytest.mark.asyncio
 async def test_learning_agent_create_lesson(db):
     agent = LearningAgent(db)
-    mock = _mock_route(agent, {"topic": "CAN bus", "explanation": "..."})
+    mock = _mock_handle(agent, {"topic": "CAN bus", "explanation": "..."})
     result = await agent.create_lesson("u1", "can", "arbitration")
 
     assert isinstance(result, Lesson)
-    assert _sent_task(mock) == TaskType.PLANNING
-    assert _sent_system(mock) == prompts.LESSON_GENERATOR.system_prompt
+    assert _handle_task(mock) == "lesson_generation"
+    assert _handle_system(mock) == prompts.LESSON_GENERATOR.system_prompt
 
 
 @pytest.mark.asyncio
 async def test_learning_agent_create_flashcards(db):
     agent = LearningAgent(db)
-    mock = _mock_route(agent, {"cards": [{"front": "What is CAN?", "back": "A bus", "difficulty": "easy"}]})
+    mock = _mock_handle(agent, {"cards": [{"front": "What is CAN?", "back": "A bus", "difficulty": "easy"}]})
     result = await agent.create_flashcards("u1", "can")
 
     assert isinstance(result, list)
     assert result[0].front == "What is CAN?"
-    assert _sent_task(mock) == TaskType.EXTRACTION
-    assert _sent_system(mock) == prompts.FLASHCARD_GENERATOR.system_prompt
+    assert _handle_task(mock) == "flashcard_generation"
+    assert _handle_system(mock) == prompts.FLASHCARD_GENERATOR.system_prompt
 
 
 # ── CodingAgent ────────────────────────────────────────────────────────────
 @pytest.mark.asyncio
 async def test_coding_agent_review_code(db):
     agent = CodingAgent(db)
-    mock = _mock_route(agent, {"overall_score": 75, "memory_issues": ["leak at line 5"]})
+    mock = _mock_handle(agent, {"overall_score": 75, "memory_issues": ["leak at line 5"]})
     result = await agent.review_code("u1", "int main(){return 0;}", "c")
 
     assert isinstance(result, CodeReview)
-    assert _sent_task(mock) == TaskType.CODING
-    assert _sent_system(mock) == prompts.CODE_REVIEWER.system_prompt
+    assert _handle_task(mock) == "coding_review_explanation"
+    assert _handle_system(mock) == prompts.CODE_REVIEWER.system_prompt
     assert result.overall_score == 75
     # Token efficiency: only code + language + empty context sent, no twin data.
-    assert "system design" not in _sent_system(mock)
+    assert "system design" not in _handle_system(mock)
 
 
 @pytest.mark.asyncio
 async def test_coding_agent_generate_challenge(db):
     agent = CodingAgent(db)
-    mock = _mock_route(agent, {"title": "Ring buffer", "difficulty": "medium"})
+    mock = _mock_handle(agent, {"title": "Ring buffer", "difficulty": "medium"})
     result = await agent.generate_challenge("u1", "data structures", "medium")
 
     assert isinstance(result, CodingChallenge)
-    assert _sent_task(mock) == TaskType.CODING
-    assert _sent_system(mock) == prompts.CHALLENGE_GENERATOR.system_prompt
+    assert _handle_task(mock) == "coding_challenge"
+    assert _handle_system(mock) == prompts.CHALLENGE_GENERATOR.system_prompt
     assert result.title == "Ring buffer"

@@ -12,7 +12,6 @@ from datetime import date
 from app.agents.base_agent import BaseAgent
 from app.agents.models import DailyBrief, MentorResponse
 from app.llm.context_builder import ContextBuilder
-from app.llm.model_selector import TaskType
 from app.llm.prompts import CAREER_ADVICE, DAILY_BRIEF
 from app.llm.response_parser import parse_structured
 
@@ -42,7 +41,8 @@ class MentorAgent(BaseAgent):
             question=message,
         )
         await self.conversation_manager.add_message(user_id, "user", message, conversation_id, db=self.db)
-        raw = await self._call(TaskType.MENTORING, CAREER_ADVICE.system_prompt, user, 1000)
+        # Phase 4: routed through the orchestrator (mentor_chat → Claude tier).
+        raw = await self._handle("mentor_chat", CAREER_ADVICE.system_prompt, user, 1000)
         result: MentorResponse = parse_structured(raw, MentorResponse)
 
         await self.conversation_manager.add_message(
@@ -64,5 +64,6 @@ class MentorAgent(BaseAgent):
             top_gap=top_gap,
             career_twin=context["candidate_context"],
         )
-        raw = await self._call(TaskType.MENTORING, DAILY_BRIEF.system_prompt, user, 1000)
+        # Phase 4: routed through the orchestrator (mentor_daily_brief → open-model tier).
+        raw = await self._handle("mentor_daily_brief", DAILY_BRIEF.system_prompt, user, 1000)
         return parse_structured(raw, DailyBrief)
