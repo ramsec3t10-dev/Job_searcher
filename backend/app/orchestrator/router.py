@@ -198,7 +198,6 @@ class Orchestrator:
         touch a real database).
         """
         session = context.get("db")
-        try:
         cost = self._tier_cost(tier, result) if tier else result.cost_estimate_usd
         kwargs = dict(
             user_id=context.get("user_id"),

@@ -134,6 +134,21 @@ async def test_semantic_cache_can_be_disabled():
         settings.ORCHESTRATOR_SEMANTIC_CACHE = original
 
 
+async def test_semantic_index_is_bounded():
+    from app.config.settings import settings
+
+    orig = settings.ORCHESTRATOR_SEMANTIC_CACHE_MAX_PER_TASK
+    settings.ORCHESTRATOR_SEMANTIC_CACHE_MAX_PER_TASK = 3
+    try:
+        cache = CacheEngine(force_memory=True)
+        for i in range(10):  # write far more than the cap
+            await cache.set("company_summary", {"prompt": f"summarize company number {i}"}, _result())
+        # In-memory embedding index is trimmed to the cap (newest kept).
+        assert len(cache._emb_mem["company_summary"]) == 3
+    finally:
+        settings.ORCHESTRATOR_SEMANTIC_CACHE_MAX_PER_TASK = orig
+
+
 def test_ttl_for_uses_settings_and_default():
     from app.config.settings import settings
 

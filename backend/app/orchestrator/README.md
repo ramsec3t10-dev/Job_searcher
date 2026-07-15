@@ -286,6 +286,7 @@ Defined in [`app/config/settings.py`](../config/settings.py):
 | `ORCHESTRATOR_CACHE_TTL`                    | `dict[str, int]` | `{}`    | Per-task cache TTL (seconds); default `86400`.      |
 | `ORCHESTRATOR_SEMANTIC_CACHE`               | `bool`           | `True`  | Enable the embedding-similarity cache tier.         |
 | `ORCHESTRATOR_SEMANTIC_CACHE_THRESHOLD`     | `float`          | `0.92`  | Min cosine similarity for a semantic hit.           |
+| `ORCHESTRATOR_SEMANTIC_CACHE_MAX_PER_TASK`  | `int`            | `500`   | Bound on the per-task embedding index (trimmed + TTL). |
 | `OPEN_MODEL_PROVIDER`                        | `str`            | `together` | `together` (hosted) or `local` (Ollama/vLLM).    |
 | `OPEN_MODEL_BASE_URL`                        | `str \| None`    | `None`  | Overrides the base URL (e.g. local endpoint).       |
 | `OPEN_MODEL_API_KEY`                         | `str \| None`    | `None`  | Overrides the key (local needs none).               |
@@ -301,6 +302,22 @@ Defined in [`app/config/settings.py`](../config/settings.py):
 > The Phase 3 spec referenced `app/core/config.py`; this repo's settings live in
 > [`app/config/settings.py`](../config/settings.py), so the new keys were added
 > there.
+
+## Observability (Phase 6)
+
+- **One structured log line per `handle()`** — event `orchestrator_handled` with
+  `task`, `engine_used`, `engine` (tier), `cached`, `confidence`, `latency_ms`,
+  `cost_estimate_usd` (structlog → JSON in prod; dashboard-ready).
+- **Per-tier usage rows** — every handled request writes one `AiUsageLog` row
+  tagged with `engine_tier` (rule/kg/cache/hosted/claude), `latency_ms`, cost
+  (free tiers = 0). This makes request-share exact.
+- **`GET /api/v1/admin/ai-usage`** (platform-admin only) — total cost this month,
+  cost + %-requests + avg latency **by engine tier** (the "≤5% to Claude" launch
+  KPI = `claude_pct_requests`), and the top-10 highest-cost task types. Sourced
+  directly from `AiUsageLog` ([`ai_usage_repository.py`](../repositories/ai_usage_repository.py)).
+- **Confidence-heuristic eval** — [`tests/orchestrator/eval/`](../../tests/orchestrator/eval/):
+  a labeled set checks the Phase-3 escalation heuristic isn't over/under-escalating
+  (`pytest tests/orchestrator/eval/ -s`).
 
 ## Tests
 
