@@ -74,6 +74,26 @@ class MockInterviewService:
         session.is_completed = True
         await self.db.flush()
 
+        # Boss-level win (85+): remember it so the mentor celebrates with them,
+        # and losses stay visible so the mentor knows when to encourage instead.
+        try:
+            from app.repositories.memory_repository import MemoryRepository
+            score = evaluation.readiness_score
+            if score >= 85:
+                await MemoryRepository(self.db).store(
+                    user_id, "achievement",
+                    f"WIN: cracked a boss-level mock interview for "
+                    f"{session.job_title or 'their target role'} with {score}/99",
+                    importance_score=5, tags=["mock_interview", "win"])
+            elif score < 50:
+                await MemoryRepository(self.db).store(
+                    user_id, "setback",
+                    f"Tough mock interview ({score}/99) for "
+                    f"{session.job_title or 'their target role'} — may feel low",
+                    importance_score=4, tags=["mock_interview", "encourage"])
+        except Exception:  # noqa: BLE001 — memory is best-effort, never break scoring
+            pass
+
         if feed_twin:
             twin = await self.twin_repo.get_by_user(user_id)
             if twin is not None:
