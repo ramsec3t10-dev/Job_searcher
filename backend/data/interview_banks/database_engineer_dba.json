@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "database_engineer_dba",
+ "questions": [
+  {
+   "question_text": "Explain ACID properties with a real transaction example.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should define atomicity, consistency, isolation, durability and tie each to a concrete transaction scenario.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you optimize a slow-running query?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention EXPLAIN plans, index usage, and identifying full table scans before rewriting the query.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the difference between horizontal partitioning (sharding) and vertical partitioning.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should give correct definitions and a scenario where each is preferable.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design a backup and disaster-recovery strategy for a production database?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover RPO/RTO targets, backup frequency, and testing restore procedures \u2014 not just 'we take backups'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What are the trade-offs of adding an index to a frequently written table?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should explain the write-amplification cost against the read-speed benefit.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain database replication and the difference between synchronous and asynchronous replication.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss the consistency vs. latency trade-off of each.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time you had to recover from a production data incident.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for a calm, methodical recovery process and what safeguards were added afterward.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a primary key and a unique key?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a clear, correct distinction including NULL handling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you handle schema migrations on a live production database with zero downtime?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention backward-compatible changes, phased rollout, and avoiding long table locks.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you diagnose a database experiencing connection pool exhaustion?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention checking for long-running/unclosed connections and application-side pool configuration.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to push back on an application design that would have hurt database performance.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for proactive collaboration with engineering, not reactive firefighting.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between optimistic and pessimistic locking, and when would you use each?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should tie the choice to contention frequency in the actual workload.",
+   "source_type": "curated"
+  }
+ ]
+}

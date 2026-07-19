@@ -28,11 +28,22 @@ class MatchingAgent(BaseAgent):
         })
         return profile, job_str
 
+    @staticmethod
+    def _domain_label(job: dict) -> str:
+        """Human-readable domain name for the prompt (defaults gracefully)."""
+        from app.domains.catalog import code_for_domain_id, flatten
+        code = code_for_domain_id(job.get("domain_id"))
+        if code:
+            for d in flatten():
+                if d.code == code:
+                    return d.name
+        return "the candidate's field"
+
     async def match(self, twin: CareerTwin, job: dict, user_id: str) -> JobMatch:
         self.user_id = user_id
         context = ContextBuilder.for_job_matching(twin, job)
         profile, job_str = self._profile_and_job(context, job)
-        user = JOB_MATCH.render(candidate_profile=profile, job=job_str)
+        user = JOB_MATCH.render(domain=self._domain_label(job), candidate_profile=profile, job=job_str)
         # Phase 4: routed through the orchestrator (match_explanation → open-model
         # tier, Claude on low confidence) instead of a direct Bedrock call.
         raw = await self._handle("match_explanation", JOB_MATCH.system_prompt, user, 1500)
@@ -49,7 +60,7 @@ class MatchingAgent(BaseAgent):
         self.user_id = user_id
         context = ContextBuilder.for_job_matching(twin, job)
         profile, job_str = self._profile_and_job(context, job)
-        user = GAP_ANALYSIS.render(candidate_profile=profile, job=job_str)
+        user = GAP_ANALYSIS.render(domain=self._domain_label(job), candidate_profile=profile, job=job_str)
         # Phase 4: routed through the orchestrator (gap_analysis_explanation → Claude-only).
         raw = await self._handle("gap_analysis_explanation", GAP_ANALYSIS.system_prompt, user, 1024)
         return parse_structured(raw, GapAnalysis)

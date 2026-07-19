@@ -57,6 +57,8 @@ class SavedJobsController extends Notifier<List<Job>> {
         'missing_skills': j.missingSkills,
         'explanation': j.explanation,
         'recommendation': j.recommendation,
+        'domain_code': j.domainCode,
+        'domain_name': j.domainName,
       };
 }
 

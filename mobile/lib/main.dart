@@ -1,27 +1,48 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart' as provider;
+import 'package:google_fonts/google_fonts.dart';
 
 import 'navigation/app_router.dart';
-import 'providers/auth_provider.dart';
-import 'providers/career_provider.dart';
-import 'services/api_client.dart';
-import 'services/auth_service.dart';
 import 'services/cache_service.dart';
-import 'services/career_service.dart';
-import 'services/tools_service.dart';
 import 'services/update_service.dart';
 import 'state/theme_controller.dart';
 import 'theme/eh_theme.dart';
 import 'widgets/update_dialog.dart';
 
 Future<void> main() async {
+  // Global error capture: framework build/layout errors and uncaught async
+  // errors are logged in one structured place. Swap `_report` for a crash
+  // vendor (Sentry/Crashlytics) once a DSN exists — call sites won't change.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    _report(details.exception, details.stack);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    _report(error, stack);
+    return true;
+  };
+
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fonts ship in assets/google_fonts — never fetch over the network (kills
+  // first-frame reflow jank and works fully offline).
+  GoogleFonts.config.allowRuntimeFetching = false;
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/google_fonts/OFL.txt');
+    yield LicenseEntryWithLineBreaks(const ['google_fonts'], license);
+  });
+
   await CacheService.instance.init();
   runApp(const ProviderScope(child: EmbedHuntApp()));
+}
+
+void _report(Object error, StackTrace? stack) {
+  // Hook point for crash reporting. Kept local until a vendor DSN is wired.
+  debugPrint('UNCAUGHT: $error\n${stack ?? ''}');
 }
 
 class EmbedHuntApp extends ConsumerStatefulWidget {
@@ -36,20 +57,9 @@ class _EmbedHuntAppState extends ConsumerState<EmbedHuntApp> {
   Timer? _updateTimer;
   bool _dialogOpen = false;
 
-  // Legacy provider-based services (kept for screens not yet migrated).
-  late final ApiClient _api;
-  late final AuthService _authService;
-  late final CareerService _careerService;
-  late final ToolsService _toolsService;
-
   @override
   void initState() {
     super.initState();
-    _api = ApiClient();
-    _authService = AuthService(_api);
-    _careerService = CareerService(_api);
-    _toolsService = ToolsService(_api);
-
     // Check shortly after launch, then every 30 minutes while open.
     Future.delayed(const Duration(milliseconds: 700), _checkForUpdate);
     _updateTimer =
@@ -59,13 +69,11 @@ class _EmbedHuntAppState extends ConsumerState<EmbedHuntApp> {
   Future<void> _checkForUpdate() async {
     if (_dialogOpen) return;
     final status = await _updateService.checkForUpdate();
+    if (!mounted || !status.hasUpdate || status.newVersion == null) return;
+    // Resolve the context only after all async gaps, and verify it is still
+    // mounted before showing the dialog.
     final ctx = rootNavigatorKey.currentContext;
-    if (!mounted ||
-        ctx == null ||
-        !status.hasUpdate ||
-        status.newVersion == null) {
-      return;
-    }
+    if (ctx == null || !ctx.mounted) return;
     _dialogOpen = true;
     await UpdateDialog.show(
       ctx,
@@ -87,26 +95,13 @@ class _EmbedHuntAppState extends ConsumerState<EmbedHuntApp> {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    return provider.MultiProvider(
-      providers: [
-        provider.ChangeNotifierProvider(
-          create: (_) => AuthProvider(_authService),
-        ),
-        provider.ChangeNotifierProvider(
-          create: (_) => CareerProvider(_careerService),
-        ),
-        provider.Provider<ToolsService>.value(
-          value: _toolsService,
-        ),
-      ],
-      child: MaterialApp.router(
-        title: 'EMBEDHUNT AI',
-        debugShowCheckedModeBanner: false,
-        theme: EHTheme.light(),
-        darkTheme: EHTheme.dark(),
-        themeMode: themeMode,
-        routerConfig: router,
-      ),
+    return MaterialApp.router(
+      title: 'EMBEDHUNT AI',
+      debugShowCheckedModeBanner: false,
+      theme: EHTheme.light(),
+      darkTheme: EHTheme.dark(),
+      themeMode: themeMode,
+      routerConfig: router,
     );
   }
 }

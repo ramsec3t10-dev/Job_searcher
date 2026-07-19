@@ -28,11 +28,12 @@ class ThemeController extends Notifier<ThemeMode> {
     switch (v) {
       case 'light':
         return ThemeMode.light;
-      case 'system':
-        return ThemeMode.system;
       case 'dark':
-      default:
         return ThemeMode.dark;
+      case 'system':
+      default:
+        // Default: match whatever theme the phone is already using.
+        return ThemeMode.system;
     }
   }
 

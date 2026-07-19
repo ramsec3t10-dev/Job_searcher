@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// Number that animates from its previous value to the new one.
 class AnimatedCounter extends StatelessWidget {
@@ -25,7 +25,7 @@ class AnimatedCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = EHType.scoreDisplay(color)
+    final style = EHType.scoreDisplay.copyWith(color: color)
         .copyWith(fontSize: fontSize ?? 28);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: value.toDouble()),

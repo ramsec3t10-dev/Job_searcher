@@ -1,0 +1,90 @@
+{
+ "domain_code": "embedded_engineering",
+ "subrole_code": "electronics_vlsi_fpga_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the difference between combinational and sequential logic with an example.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give correct definitions and a clocking example distinguishing the two.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is clock domain crossing and why is it a common source of bugs?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should explain metastability risk and mention synchronizer techniques as mitigation.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Walk me through the ASIC design flow from RTL to GDSII.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should correctly sequence synthesis, place & route, timing closure, and verification stages.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between an FPGA and an ASIC, and when would you choose each?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should weigh time-to-market, unit cost at volume, and reconfigurability trade-offs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain setup and hold time violations and how you'd fix a timing closure issue.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should describe the timing constraint concept and practical fixes (pipelining, retiming, constraint adjustment).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is UVM and why is it used for verification instead of simple testbenches?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention reusability, constrained-random verification, and coverage-driven methodology.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time a design passed simulation but failed on silicon \u2014 how did you debug it?",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for structured bring-up debugging: scope/logic analyzer use, isolating the failure domain.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between synchronous and asynchronous resets?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a correct distinction and a trade-off (timing vs. glitch sensitivity).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you approach power optimization in a digital design?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention clock gating, power gating, and voltage/frequency scaling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain signal integrity issues that can arise on a high-speed PCB.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention reflections, crosstalk, and impedance matching at a conceptual level.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is DFT (design for test) and why is it added to a chip design?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention scan chains and built-in self-test enabling post-fabrication testing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the difference between Verilog blocking and non-blocking assignments.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should correctly explain simulation execution order differences and when to use each.",
+   "source_type": "curated"
+  }
+ ]
+}

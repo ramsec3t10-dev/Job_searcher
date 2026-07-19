@@ -4,7 +4,7 @@ from app.llm.prompts.base import INT, STR, PromptTemplate, arr, obj
 
 COMPANY_INTELLIGENCE = PromptTemplate(
     system_prompt=(
-        "Role: interview intelligence analyst for embedded engineering employers. Profile "
+        "Role: interview intelligence analyst for employers in the candidate's field. Profile "
         "the company's hiring process for the role. typical_rounds is an integer count. "
         "difficulty is 1-5. known_topics are recurring interview subjects. preparation_tip "
         "and insider_note are one line each. why_work_here is a short honest pitch. "

@@ -129,6 +129,70 @@ class InterviewEngine:
                     picked.append(q)
         return [_to_question(q) for q in picked[:count]]
 
+
+    # ── Realistic full-arc session ───────────────────────────────────────
+    #   Mirrors a real panel: intro → warm-up → core deep-dive → coding →
+    #   behavioral → your-questions. Stages reference the same flat question
+    #   list used for scoring, so evaluate() works unchanged.
+    def build_realistic_session(self, skills: list[str], *,
+                                weak_skills: list[str] | None = None) -> dict:
+        wanted = [s.lower() for s in skills] or ["c", "rtos"]
+        weak = {s.lower() for s in (weak_skills or [])}
+
+        def pick(pool: list[dict], n: int, taken: set[str]) -> list[dict]:
+            out = []
+            for q in pool:
+                if len(out) >= n:
+                    break
+                if q["id"] in taken:
+                    continue
+                taken.add(q["id"])
+                out.append(q)
+            return out
+
+        def skill_pool(types: set[str], difficulties: set[str]) -> list[dict]:
+            pool: list[dict] = []
+            # weak skills first so the deep-dive lands where it should
+            for s in sorted(wanted, key=lambda x: (x not in weak, x)):
+                for q in BY_SKILL.get(s, []):
+                    if q["type"] in types and q["difficulty"] in difficulties:
+                        pool.append(q)
+            # curated/company-asked outrank templated filler
+            pool.sort(key=lambda q: 0 if q["category"] in ("curated", "company_asked") else 1)
+            return pool
+
+        taken: set[str] = set()
+        stages = [
+            {"name": "introduction", "title": "Introduction",
+             "brief": "Give your 90-second introduction, then walk your most recent project top-down.",
+             "questions": pick(BY_SKILL.get("behavioral", []), 1, taken)
+                          + pick(BY_SKILL.get("hr", []), 1, taken)},
+            {"name": "warm_up", "title": "Warm-up",
+             "brief": "Quick checks on the skills you claim — answer crisply.",
+             "questions": pick(skill_pool({"core"}, {"easy"}), 2, taken)},
+            {"name": "core_technical", "title": "Core deep-dive",
+             "brief": "The heart of the interview. Reason out loud; state trade-offs.",
+             "questions": pick(skill_pool({"core", "applied"}, {"medium", "hard"}), 4, taken)},
+            {"name": "coding", "title": "Coding",
+             "brief": "Talk while you write. State complexity without being asked.",
+             "questions": pick(skill_pool({"coding"}, {"easy", "medium", "hard"}), 2, taken)},
+            {"name": "behavioral", "title": "Behavioral",
+             "brief": "STAR structure: your role, your decisions, a measurable result.",
+             "questions": pick(BY_SKILL.get("behavioral", [])[1:], 2, taken)},
+            {"name": "your_questions", "title": "Your questions",
+             "brief": "Ask two real questions about the team's technology and process.",
+             "questions": []},
+        ]
+        flat = [q for st in stages for q in st["questions"]]
+        return {
+            "stages": [
+                {"name": st["name"], "title": st["title"], "brief": st["brief"],
+                 "question_ids": [q["id"] for q in st["questions"]]}
+                for st in stages
+            ],
+            "questions": [_to_question(q) for q in flat],
+        }
+
     def score_answer(self, question_id: str, answer: str) -> AnswerScore:
         q = _BY_ID.get(question_id)
         if q is None:

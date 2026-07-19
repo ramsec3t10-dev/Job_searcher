@@ -16,16 +16,81 @@ class AuthService:
         self.db = db
         self.repo = UserRepository(db)
 
-    async def register(self, email: str, username: str, password: str, first_name: str, last_name: str, role: UserRole = UserRole.CANDIDATE) -> dict:
+    @staticmethod
+    def _normalize_phone(phone: str) -> str:
+        digits = "".join(c for c in (phone or "") if c.isdigit() or c == "+")
+        if not digits.startswith("+"):
+            digits = "+" + digits
+        if len(digits) < 11:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Enter a valid mobile number with country code")
+        return digits
+
+    async def request_otp(self, phone: str) -> dict:
+        """Issue a 6-digit code for this phone (5-minute TTL). In dev (no SMS
+        provider) the code is returned as `dev_code` so the flow stays real."""
+        import hashlib, secrets
+        from app.config.settings import settings
+        from app.models.phone_otp import PhoneOtp
+        from app.models.user import User
+        from app.services.sms_service import send_sms
+        from sqlalchemy import select
+
+        phone = self._normalize_phone(phone)
+        existing = (await self.db.execute(select(User).where(User.phone == phone))).scalar_one_or_none()
+        if existing:
+            raise HTTPException(status.HTTP_409_CONFLICT, "This mobile number is already registered")
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        row = (await self.db.execute(select(PhoneOtp).where(PhoneOtp.phone == phone))).scalar_one_or_none()
+        if row is None:
+            row = PhoneOtp(phone=phone)
+            self.db.add(row)
+        row.code_hash = hashlib.sha256(code.encode()).hexdigest()
+        row.expires_at = (datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_TTL_SECONDS)).isoformat()
+        row.attempts = 0
+        await self.db.flush()
+        sent = await send_sms(phone, f"Your EMBEDHUNT verification code is {code}")
+        out = {"message": "Verification code sent", "expires_in": settings.OTP_TTL_SECONDS}
+        if not sent and not settings.is_production:
+            out["dev_code"] = code
+        logger.info("otp_requested", phone_last4=phone[-4:], sent=sent)
+        return out
+
+    async def _consume_otp(self, phone: str, code: str) -> None:
+        import hashlib
+        from app.models.phone_otp import PhoneOtp
+        from sqlalchemy import select
+
+        row = (await self.db.execute(select(PhoneOtp).where(PhoneOtp.phone == phone))).scalar_one_or_none()
+        bad = HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired verification code")
+        if row is None:
+            raise bad
+        if datetime.now(timezone.utc) > datetime.fromisoformat(row.expires_at) or row.attempts >= 5:
+            await self.db.delete(row); await self.db.flush()
+            raise bad
+        if hashlib.sha256((code or "").encode()).hexdigest() != row.code_hash:
+            row.attempts += 1; await self.db.flush()
+            raise bad
+        await self.db.delete(row); await self.db.flush()
+
+    async def register(self, email: str, username: str, password: str, first_name: str, last_name: str, role: UserRole = UserRole.CANDIDATE, phone: str | None = None, otp_code: str | None = None) -> dict:
+        from app.config.settings import settings
         if await self.repo.email_exists(email.lower()):
             raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
         if await self.repo.username_exists(username.lower()):
             raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken")
+        verified_phone: str | None = None
+        if settings.OTP_REQUIRED:
+            if not phone or not otp_code:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Mobile number and verification code are required")
+            verified_phone = self._normalize_phone(phone)
+            await self._consume_otp(verified_phone, otp_code)
         user = await self.repo.create(
             email=email.lower(), username=username.lower(),
             password_hash=hash_password(password),
             first_name=first_name.strip(), last_name=last_name.strip(),
-            role=role, is_active=True, is_verified=False
+            role=role, is_active=True, is_verified=False,
+            phone=verified_phone, phone_verified=verified_phone is not None,
+            session_version=1,
         )
         token = create_email_verify_token(user.email)
         await self.repo.set_verify_token(user.id, token)
@@ -51,7 +116,11 @@ class AuthService:
                 raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"Too many failures. Locked {LOCKOUT_DURATION_MINUTES} min.")
             raise _err
         await self.repo.update_last_login(user.id)
-        logger.info("user_login", user_id=user.id, ip=ip)
+        # One active session per account/mobile number: invalidate all
+        # previously issued tokens by bumping the session version.
+        user.session_version = (user.session_version or 0) + 1
+        await self.db.flush()
+        logger.info("user_login", user_id=user.id, ip=ip, sv=user.session_version)
         return self._tokens_and_user(user, "Login successful")
 
     async def refresh(self, refresh_token: str) -> dict:
@@ -59,9 +128,11 @@ class AuthService:
         user = await self.repo.get_by_id(payload["sub"])
         if not user or not user.is_active:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+        if payload.get("sv") is not None and payload["sv"] != (user.session_version or 0):
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session ended — this account signed in on another device")
         from app.config.settings import settings
-        return {"access_token": create_access_token(user.id, user.role.value),
-                "refresh_token": create_refresh_token(user.id),
+        return {"access_token": create_access_token(user.id, user.role.value, user.session_version or 0),
+                "refresh_token": create_refresh_token(user.id, user.session_version or 0),
                 "token_type": "bearer",
                 "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
 
@@ -90,8 +161,8 @@ class AuthService:
     def _tokens_and_user(self, user, message: str) -> dict:
         from app.config.settings import settings
         return {
-            "access_token": create_access_token(user.id, user.role.value),
-            "refresh_token": create_refresh_token(user.id),
+            "access_token": create_access_token(user.id, user.role.value, user.session_version or 0),
+            "refresh_token": create_refresh_token(user.id, user.session_version or 0),
             "token_type": "bearer",
             "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             "user": {

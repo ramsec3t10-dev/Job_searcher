@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../state/auth_controller.dart';
+import '../state/prefs_controller.dart';
 import '../state/theme_controller.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
@@ -48,6 +49,18 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: EHSpace.xl),
           _sectionLabel('ACCOUNT', txt2),
+          const SizedBox(height: EHSpace.sm),
+          _card(
+            isDark,
+            child: ListTile(
+              leading: const Icon(Icons.badge_outlined, color: EHColor.brand),
+              title: Text('What we call you',
+                  style: EHType.colored(EHType.bodyMD, txt1)),
+              trailing: Text(ref.watch(aliasProvider) ?? '—',
+                  style: EHType.colored(EHType.bodySM, txt2)),
+              onTap: () => _editAlias(context, ref),
+            ),
+          ),
           const SizedBox(height: EHSpace.sm),
           _card(
             isDark,
@@ -113,6 +126,33 @@ class SettingsScreen extends ConsumerWidget {
           );
         },
       );
+
+  Future<void> _editAlias(BuildContext context, WidgetRef ref) async {
+    final controller =
+        TextEditingController(text: ref.read(aliasProvider) ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('What should I call you?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name != null && name.trim().isNotEmpty) {
+      ref.read(aliasProvider.notifier).set(name.trim());
+    }
+  }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(

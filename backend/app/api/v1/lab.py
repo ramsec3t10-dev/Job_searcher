@@ -22,12 +22,15 @@ async def challenges(
 @router.get("/challenges/{challenge_id}", summary="Get a single challenge")
 async def challenge_detail(
     challenge_id: str,
+    reveal: bool = False,
     user_id: str = Depends(get_current_user_id),
 ):
+    """Challenge body; pass ``reveal=true`` for the reference solution and
+    interviewer notes (training mode)."""
     ch = get_challenge(challenge_id)
     if not ch:
         raise HTTPException(404, f"Challenge {challenge_id} not found.")
-    return ch.public()
+    return ch.detail() if reveal else ch.public()
 
 
 @router.post("/challenges/{challenge_id}/submit", summary="Submit a solution for static grading")

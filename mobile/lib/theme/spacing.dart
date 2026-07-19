@@ -1,3 +1,8 @@
+// The uppercase BorderRadius getters (EHRadius.LG, …) are a deliberate
+// design-system DSL mirroring the lowercase raw doubles; silence the
+// naming lint for this tokens file only.
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/widgets.dart';
 
 /// EMBEDHUNT AI spacing scale (8-pt grid). Canonical v6 API.

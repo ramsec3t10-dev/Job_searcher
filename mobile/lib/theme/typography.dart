@@ -144,6 +144,16 @@ class EHType {
         letterSpacing: 0.3,
       );
 
+  // ── Numeric display (Space Grotesk, tabular) ────────────────
+  /// Big score/metric numerals — tabular so counters don't jitter.
+  static TextStyle get scoreDisplay => GoogleFonts.spaceGrotesk(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        height: 1.0,
+        letterSpacing: -1.0,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
   // ── Code (JetBrains Mono) ────────────────────────────────────
   static TextStyle get mono => GoogleFonts.jetBrainsMono(
         fontSize: 13,

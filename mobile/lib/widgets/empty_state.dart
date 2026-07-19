@@ -3,7 +3,7 @@ import 'package:lottie/lottie.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// Friendly empty state. Renders (in priority order) a Lottie animation, an
 /// emoji, or an icon inside a soft gradient medallion, followed by a title,
@@ -69,13 +69,13 @@ class EHEmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: EHType.h2(context.textPrimary),
+              style: EHType.h2.copyWith(color: context.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: EHType.body(context.textSecondary),
+              style: EHType.bodyMD.copyWith(color: context.textSecondary),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),

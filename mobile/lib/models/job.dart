@@ -18,6 +18,8 @@ class Job {
   final List<String> missingSkills;
   final String explanation;
   final String recommendation;
+  final String? domainCode;
+  final String? domainName;
 
   const Job({
     required this.rank,
@@ -38,6 +40,8 @@ class Job {
     required this.missingSkills,
     required this.explanation,
     required this.recommendation,
+    this.domainCode,
+    this.domainName,
   });
 
   static List<String> _stringList(dynamic value) {
@@ -71,6 +75,8 @@ class Job {
       missingSkills: _stringList(json['missing_skills']),
       explanation: json['explanation'] as String? ?? '',
       recommendation: json['recommendation'] as String? ?? '',
+      domainCode: json['domain_code'] as String?,
+      domainName: json['domain_name'] as String?,
     );
   }
 

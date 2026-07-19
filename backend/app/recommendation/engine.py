@@ -43,9 +43,20 @@ def run_matching(
     min_score: int = 40,
     salary_min: float = 15.0,
     corpus: list[dict] | None = None,
+    *,
+    scoring=None,
+    target_domains=None,
 ) -> RankingResult:
-    """Rank ``profile`` against ``corpus`` (defaults to the curated seed corpus)."""
-    return rank_jobs(profile, corpus if corpus is not None else _job_corpus(), min_score, salary_min)
+    """Rank ``profile`` against ``corpus`` (defaults to the curated seed corpus).
+
+    ``scoring`` is an optional ``{domain_code: DomainScoringConfig}`` registry
+    (see recommendation.scoring_config.load_scoring_configs) enabling domain-aware
+    weights. When omitted, embedded/untagged jobs score exactly as before and
+    other domains fall back to generic skill overlap. ``target_domains`` are the
+    candidate's declared target domain codes, used for the generic domain bonus.
+    """
+    return rank_jobs(profile, corpus if corpus is not None else _job_corpus(),
+                     min_score, salary_min, scoring=scoring, target_domains=target_domains)
 
 
 def run_live_matching(

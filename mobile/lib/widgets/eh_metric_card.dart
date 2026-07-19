@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 import 'animated_counter.dart';
 import 'eh_card.dart';
 
@@ -56,7 +56,7 @@ class EHMetricCard extends StatelessWidget {
                     delta!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: EHType.caption(accent)
+                    style: EHType.caption.copyWith(color: accent)
                         .copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -75,7 +75,7 @@ class EHMetricCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: EHType.caption(context.textMuted),
+            style: EHType.caption.copyWith(color: context.textMuted),
           ),
         ],
       ),

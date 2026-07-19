@@ -84,6 +84,10 @@ class _JobCardState extends ConsumerState<JobCard> {
                           ),
                           const SizedBox(width: 6),
                           _TierBadge(tier: job.companyTier),
+                          if (job.domainName != null) ...[
+                            const SizedBox(width: 6),
+                            _DomainBadge(name: job.domainName!),
+                          ],
                         ],
                       ),
                     ],
@@ -227,6 +231,28 @@ class _TierBadge extends StatelessWidget {
       ),
       child: Text(tier.toUpperCase(),
           style: EHType.labelSM.copyWith(color: color, fontSize: 9)),
+    );
+  }
+}
+
+/// Data-driven domain badge (Phase 6) — shows the job's classified domain name
+/// from the API. No hardcoded domain labels.
+class _DomainBadge extends StatelessWidget {
+  const _DomainBadge({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: EHColor.brand.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(name.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: EHType.labelSM.copyWith(color: EHColor.brand, fontSize: 9)),
     );
   }
 }

@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "cloud_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the difference between a public and private subnet in a VPC.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe routing to an internet gateway vs. NAT gateway and typical use cases for each.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the principle of least privilege and how do you apply it with IAM?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe scoped roles/policies over broad admin access, with a concrete example.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design a multi-region architecture for disaster recovery?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss RTO/RPO trade-offs, active-active vs. active-passive, and data replication strategy.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "When would you choose serverless (Lambda/Functions) over containers or VMs?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should weigh cold starts, execution time limits, and cost-at-scale trade-offs honestly.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you approach reducing cloud costs without hurting reliability?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention right-sizing, reserved/spot instances, and identifying idle resources \u2014 not just 'turn things off'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you secure a publicly exposed API endpoint end to end?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover WAF, rate limiting, authentication, and network-level restrictions together.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time you had to respond to a security incident in a cloud environment.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for a structured response: containment, root cause, and remediation, not panic-driven fixes.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a load balancer and an API gateway?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should clarify overlapping but distinct responsibilities (traffic distribution vs. request routing/auth/transformation).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is auto-scaling and what metric would trigger it in a typical web app?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should explain the concept and give a sensible metric like CPU utilization or request queue depth.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you manage secrets (API keys, DB credentials) in a cloud-native application?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention a secrets manager, rotation policy, and avoiding secrets in code/config files.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a migration you led from on-prem or one cloud provider to another.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for planning around downtime, data migration validation, and rollback plans.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design for high availability across availability zones?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention distributing resources across AZs, health checks, and automated failover.",
+   "source_type": "curated"
+  }
+ ]
+}

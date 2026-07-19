@@ -19,7 +19,8 @@ class MockInterviewService:
         self.twin_repo = CareerTwinRepository(db)
 
     async def generate(self, user_id: str, *, skills: list[str] | None = None,
-                       count: int = 10, company: str = "", job_title: str = "Mock Interview") -> dict:
+                       count: int = 10, company: str = "", job_title: str = "Mock Interview",
+                       fmt: str = "adaptive") -> dict:
         twin = await self.twin_repo.get_by_user(user_id)
         weak: list[str] = []
         if skills is None:
@@ -31,7 +32,15 @@ class MockInterviewService:
             weak += [s.get("name", "") for s in (twin.skills or [])
                      if 0 < float(s.get("confidence", 0.0)) < 0.5]
 
-        questions = self.engine.build_session(skills, count=count, weak_skills=weak)
+        stages: list[dict] = []
+        if fmt == "realistic":
+            # Full interview arc: intro → warm-up → deep-dive → coding →
+            # behavioral → your-questions. Same flat list feeds evaluate().
+            built = self.engine.build_realistic_session(skills, weak_skills=weak)
+            questions = built["questions"]
+            stages = built["stages"]
+        else:
+            questions = self.engine.build_session(skills, count=count, weak_skills=weak)
         q_dicts = [q.to_dict() for q in questions]
 
         session = InterviewSession(
@@ -41,14 +50,18 @@ class MockInterviewService:
         )
         self.db.add(session)
         await self.db.flush()
-        return {
+        result = {
             "session_id": session.id,
             "job_title": job_title,
             "company": company,
+            "format": fmt,
             "focus_weak_skills": sorted(set(weak)),
             "total_questions": len(q_dicts),
             "questions": q_dicts,
         }
+        if stages:
+            result["stages"] = stages
+        return result
 
     async def evaluate(self, user_id: str, session_id: str, answers: dict[str, str],
                        *, feed_twin: bool = True) -> dict:

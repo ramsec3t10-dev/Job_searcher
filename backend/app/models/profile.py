@@ -1,6 +1,6 @@
 """EMBEDHUNT AI — Candidate Profile Model"""
 from typing import Optional
-from sqlalchemy import String, Boolean, Text, Integer, Float
+from sqlalchemy import String, Boolean, Text, Integer, Float, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.base import BaseModel
 
@@ -9,6 +9,12 @@ class CandidateProfile(BaseModel):
     user_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, index=True)
     headline: Mapped[str] = mapped_column(String(300), default="Embedded Software Engineer")
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # ── Multi-domain (Phase 1) — additive; embedded columns above stay authoritative
+    # for existing code paths until later phases read from domain_profile_data. ──
+    primary_domain_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("job_domains.id"), nullable=True, index=True)
+    secondary_domain_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    domain_profile_data: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     total_experience_years: Mapped[float] = mapped_column(Float, default=0.0)
     current_role: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     current_company: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)

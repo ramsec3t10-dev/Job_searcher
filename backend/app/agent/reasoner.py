@@ -91,8 +91,13 @@ def _gap_leverage(result: RankingResult) -> list[str]:
 def reason_about_career(profile: CandidateProfile, result: RankingResult) -> CareerInsights:
     """Produce career-level insights from a profile + ranked opportunities."""
     best = result.jobs[0].match_score if result.jobs else 0
-    # Blend the candidate's domain score with their best realistic market match.
-    readiness_score = int(round(0.5 * profile.embedded_domain_score + 0.5 * best))
+    # Embedded candidates blend their domain score with the best market match
+    # (unchanged). For other domains there is no embedded_domain_score signal, so
+    # readiness is the best realistic market match.
+    if profile.is_embedded_engineer:
+        readiness_score = int(round(0.5 * profile.embedded_domain_score + 0.5 * best))
+    else:
+        readiness_score = best
     level = _readiness_level(readiness_score)
 
     stretch = sum(1 for j in result.jobs if 55 <= j.match_score < 70)
@@ -128,8 +133,12 @@ def reason_about_career(profile: CandidateProfile, result: RankingResult) -> Car
 
     top_gaps = _gap_leverage(result)
 
+    if profile.is_embedded_engineer:
+        _domain_line = f"Profile domain score {profile.embedded_domain_score}/100; best market match {best}/99."
+    else:
+        _domain_line = f"Best market match {best}/99 across {result.total_qualified} qualified role(s)."
     rationale = [
-        f"Profile domain score {profile.embedded_domain_score}/100; best market match {best}/99.",
+        _domain_line,
         f"{result.total_qualified} qualified, {result.auto_apply_count} auto-apply, "
         f"{result.strong_count} strong, {stretch} stretch.",
     ]

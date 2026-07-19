@@ -7,13 +7,17 @@ the pipeline always makes progress and degrades gracefully.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.job_sources.aggregator import discover
 from app.job_sources.base import Fetcher, JobSource
+from app.job_sources.domain_classifier import DomainClassifier
 from app.repositories.discovered_job_repository import DiscoveredJobRepository
+
+logger = logging.getLogger("embedhunt.discovery")
 
 
 @dataclass
@@ -41,14 +45,27 @@ class JobPipeline:
 
     async def run(self, *, fetcher: Fetcher | None = None,
                   sources: list[JobSource] | None = None,
+                  classifier: DomainClassifier | None = None,
+                  user_id: str | None = None,
                   limit_per_source: int = 100) -> PipelineStats:
         discovery = discover(sources=sources, fetcher=fetcher,
                              limit_per_source=limit_per_source)
+        # Rule-only classifier by default → no network in the common path/tests.
+        # Callers wanting the LLM tier inject a classifier built with a router.
+        classifier = classifier or DomainClassifier()
         stats = PipelineStats(
             sources_ok=list(discovery.sources_ok),
             sources_failed=list(discovery.sources_failed),
         )
         for posting in discovery.postings:
+            # Domain-tag every posting before persistence (never let a
+            # classification error abort ingestion).
+            try:
+                result = await classifier.classify(
+                    posting.title, posting.description, user_id=user_id, db=self.db)
+                posting.domain_id = result.domain_id
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("classify_failed %s (%s)", posting.title, exc)
             _, created = await self.repo.upsert(posting.to_corpus_dict())
             stats.discovered += 1
             if created:
@@ -59,5 +76,7 @@ class JobPipeline:
 
 
 async def run_pipeline(db: AsyncSession, *, fetcher: Fetcher | None = None,
-                       sources: list[JobSource] | None = None) -> PipelineStats:
-    return await JobPipeline(db).run(fetcher=fetcher, sources=sources)
+                       sources: list[JobSource] | None = None,
+                       classifier: DomainClassifier | None = None) -> PipelineStats:
+    return await JobPipeline(db).run(fetcher=fetcher, sources=sources,
+                                     classifier=classifier)

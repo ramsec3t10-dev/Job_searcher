@@ -1,10 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../state/content_controllers.dart';
 import '../../theme/colors.dart';
 import '../../theme/eh_context.dart';
+import '../../theme/haptics.dart';
 import '../../theme/typography.dart';
 import '../../widgets/company_avatar.dart';
 import '../../widgets/eh_card.dart';
@@ -32,6 +34,20 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
         appBar: AppBar(
           title: Text('Interview',
               style: EHType.h2.copyWith(color: context.textPrimary)),
+          actions: [
+            Semantics(
+              button: true,
+              label: 'Start a full mock interview',
+              child: TextButton.icon(
+                onPressed: () {
+                  EHHaptic.confirm();
+                  context.push('/mock');
+                },
+                icon: const Icon(Icons.record_voice_over_rounded, size: 16),
+                label: const Text('Mock'),
+              ),
+            ),
+          ],
           bottom: TabBar(
             labelStyle: EHType.button,
             tabs: const [
@@ -289,6 +305,7 @@ class _QuestionCard extends StatefulWidget {
 
 class _QuestionCardState extends State<_QuestionCard> {
   bool _open = false;
+  bool _revealed = false;
   final _answer = TextEditingController();
 
   @override
@@ -297,11 +314,56 @@ class _QuestionCardState extends State<_QuestionCard> {
     super.dispose();
   }
 
+  /// The self-check rep: think → answer in your own words → compare against
+  /// the model answer, follow-ups and red flags.
+  void _reveal() {
+    EHHaptic.confirm();
+    setState(() => _revealed = true);
+  }
+
+  Widget _revealBlock(BuildContext context, String label, String text,
+      Color color, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(label, style: EHType.labelSM.copyWith(color: color)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(text,
+              style: EHType.bodySM
+                  .copyWith(color: context.textSecondary, height: 1.55)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = widget.q;
+    final modelAnswer = q.str('model_answer');
+    final followUps = q.strings('follow_ups');
+    final redFlags = q.str('red_flags');
+    final expected = q.str('expected');
+
     return EHCard(
-      onTap: () => setState(() => _open = !_open),
+      onTap: () {
+        EHHaptic.light();
+        setState(() => _open = !_open);
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,6 +373,10 @@ class _QuestionCardState extends State<_QuestionCard> {
               _tag(q.str('difficulty', 'medium'), EHColor.warning),
               const SizedBox(width: 6),
               if (q.str('type').isNotEmpty) _tag(q.str('type'), EHColor.brand),
+              if (modelAnswer.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                _tag('coached', EHColor.accent),
+              ],
             ],
           ),
           const SizedBox(height: 8),
@@ -320,10 +386,10 @@ class _QuestionCardState extends State<_QuestionCard> {
             const SizedBox(height: 12),
             TextField(
               controller: _answer,
-              maxLines: 3,
+              maxLines: 4,
               style: EHType.bodySM.copyWith(color: context.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Type your answer…',
+                hintText: 'Say it out loud, then jot the key points…',
                 filled: true,
                 fillColor: context.cardElevated,
                 border: OutlineInputBorder(
@@ -332,12 +398,38 @@ class _QuestionCardState extends State<_QuestionCard> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                  onPressed: () {}, child: const Text('Submit')),
-            ),
+            if (!_revealed) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Semantics(
+                  button: true,
+                  label: 'Reveal the model answer',
+                  child: FilledButton.icon(
+                    onPressed: _reveal,
+                    icon: const Icon(Icons.visibility_rounded, size: 16),
+                    label: const Text('Check my answer'),
+                  ),
+                ),
+              ),
+            ] else ...[
+              if (modelAnswer.isNotEmpty)
+                _revealBlock(context, 'MODEL ANSWER', modelAnswer,
+                    EHColor.success, Icons.school_rounded)
+              else if (expected.isNotEmpty)
+                _revealBlock(context, 'KEY POINTS', expected,
+                    EHColor.success, Icons.school_rounded),
+              if (followUps.isNotEmpty)
+                _revealBlock(
+                    context,
+                    'INTERVIEWER FOLLOW-UPS',
+                    followUps.map((f) => '• $f').join('\n'),
+                    EHColor.info,
+                    Icons.help_outline_rounded),
+              if (redFlags.isNotEmpty)
+                _revealBlock(context, 'RED FLAGS TO AVOID', redFlags,
+                    EHColor.danger, Icons.flag_rounded),
+            ],
           ],
         ],
       ),

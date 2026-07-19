@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "ai_ml_engineer",
+ "questions": [
+  {
+   "question_text": "Explain how RAG works and why you'd choose it over fine-tuning for a knowledge-heavy task.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe retriever + generator architecture and note fine-tuning is brittle for frequently-changing facts.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain self-attention and why transformers process sequences in parallel.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe query/key/value mechanics at a conceptual level without requiring the full paper.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you evaluate whether an LLM-based feature is production-ready?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention faithfulness/groundedness checks, human eval, offline eval sets, and monitoring for drift.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "A model gives confident but factually wrong answers in a high-risk context. How do you investigate and mitigate this?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss root-causing (retrieval gap vs. model gap), grounding via citations, and guardrails \u2014 not just 'add more data'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between fine-tuning and prompt engineering, and when is each appropriate?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should cover cost, data requirements, and that prompting is usually the first lever to pull.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Design a customer-support AI agent with tool use and cost controls.",
+   "category": "system_design",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover intent routing, tool-calling guardrails, token budget management, and escalation to a human.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the bias-variance trade-off with a concrete example.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should connect the concept to overfitting/underfitting with a practical illustration.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do LoRA/QLoRA reduce the cost of fine-tuning large models?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should explain low-rank adapter updates vs. full-parameter fine-tuning and the memory savings.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you choose between a vector database and a traditional database with a vector extension?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should weigh scale, latency requirements, and operational simplicity.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time a model performed well offline but poorly in production.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for awareness of train/serve skew, data drift, and how they diagnosed the gap.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain precision, recall, and F1 score with an example where accuracy alone would mislead.",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should use a class-imbalance example (e.g. fraud detection) to show why accuracy fails.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you control inference cost and latency in an LLM-backed product at scale?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention model tiering/routing, caching, batching, and prompt-length optimization.",
+   "source_type": "curated"
+  }
+ ]
+}

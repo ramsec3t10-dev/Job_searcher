@@ -6,6 +6,8 @@ from app.auth.permissions import UserRole
 class RegisterRequest(BaseModel):
     email: EmailStr; username: str; password: str; first_name: str; last_name: str
     role: UserRole = UserRole.CANDIDATE
+    phone: str | None = None
+    otp_code: str | None = None
 
     @field_validator("username")
     @classmethod
@@ -37,3 +39,7 @@ class ResetPasswordRequest(BaseModel):
 
 class VerifyEmailRequest(BaseModel):
     token: str
+
+
+class OtpRequest(BaseModel):
+    phone: str

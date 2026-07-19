@@ -57,31 +57,31 @@ class DashboardSkeleton extends StatelessWidget {
     return EHShimmer(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-        children: [
-          const EHSkeleton(width: 160, height: 22),
-          const SizedBox(height: 24),
-          const EHSkeleton(
+        children: const [
+          EHSkeleton(width: 160, height: 22),
+          SizedBox(height: 24),
+          EHSkeleton(
               height: 190, radius: EHSpacing.radiusLg, width: double.infinity),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
-              const SizedBox(width: 12),
-              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              SizedBox(width: 12),
+              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
-              const SizedBox(width: 12),
-              Expanded(child: const EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
+              SizedBox(width: 12),
+              Expanded(child: EHSkeleton(height: 96, radius: EHSpacing.radiusLg)),
             ],
           ),
-          const SizedBox(height: 24),
-          const EHSkeleton(width: 140, height: 20),
-          const SizedBox(height: 16),
-          const EHSkeleton(
+          SizedBox(height: 24),
+          EHSkeleton(width: 140, height: 20),
+          SizedBox(height: 16),
+          EHSkeleton(
               height: 120, radius: EHSpacing.radiusLg, width: double.infinity),
         ],
       ),
@@ -125,30 +125,30 @@ class JobCardSkeleton extends StatelessWidget {
           color: context.card,
           borderRadius: BorderRadius.circular(EHSpacing.radiusLg),
         ),
-        child: Column(
+        child: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const EHSkeleton(width: 44, height: 44, radius: EHSpacing.radiusMd),
-                const SizedBox(width: 12),
+                EHSkeleton(width: 44, height: 44, radius: EHSpacing.radiusMd),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       EHSkeleton(width: 160, height: 16),
                       SizedBox(height: 8),
                       EHSkeleton(width: 100, height: 12),
                     ],
                   ),
                 ),
-                const EHSkeleton(width: 48, height: 48, radius: 24),
+                EHSkeleton(width: 48, height: 48, radius: 24),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
-              children: const [
+              children: [
                 EHSkeleton(width: 70, height: 24, radius: 999),
                 SizedBox(width: 8),
                 EHSkeleton(width: 90, height: 24, radius: 999),
@@ -173,9 +173,9 @@ class ProfileSkeleton extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         children: [
-          Center(
+          const Center(
             child: Column(
-              children: const [
+              children: [
                 EHSkeleton(width: 88, height: 88, radius: 44),
                 SizedBox(height: 16),
                 EHSkeleton(width: 160, height: 20),

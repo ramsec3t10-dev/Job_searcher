@@ -23,6 +23,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _phone = TextEditingController();
+  final _otp = TextEditingController();
+  bool _otpSent = false;
+  bool _sendingOtp = false;
   bool _obscure = true;
   int _shake = 0;
   String _password2 = '';
@@ -42,7 +46,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_email.text.contains('@')) return 'Enter a valid email';
     if (_password.text.length < 8) return 'Password must be 8+ characters';
     if (_password.text != _confirm.text) return 'Passwords do not match';
+    if (_phone.text.trim().length < 10) return 'Enter your mobile number with country code';
+    if (!_otpSent) return 'Tap "Send code" to verify your mobile number';
+    if (_otp.text.trim().length != 6) return 'Enter the 6-digit code we sent you';
     return null;
+  }
+
+  Future<void> _sendOtp() async {
+    final phone = _phone.text.trim();
+    if (phone.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Enter your mobile number with country code, e.g. +91…')));
+      return;
+    }
+    setState(() => _sendingOtp = true);
+    try {
+      final devCode =
+          await ref.read(authControllerProvider.notifier).requestOtp(phone);
+      if (!mounted) return;
+      setState(() {
+        _otpSent = true;
+        _sendingOtp = false;
+      });
+      if (devCode != null) _otp.text = devCode; // dev builds: auto-fill
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+            content: Text(devCode == null
+                ? 'Code sent to $phone'
+                : 'Dev build — code auto-filled')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _sendingOtp = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   void _submit() {
@@ -61,6 +100,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           password: _password.text,
           firstName: _first.text.trim(),
           lastName: _last.text.trim(),
+          phone: _phone.text.trim(),
+          otpCode: _otp.text.trim(),
         );
   }
 
@@ -144,6 +185,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   icon: Icons.lock_outline_rounded,
                   obscure: _obscure,
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: EHTextField(
+                        controller: _phone,
+                        label: 'Mobile number (+91…)',
+                        icon: Icons.smartphone_rounded,
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: _sendingOtp ? null : _sendOtp,
+                        child: _sendingOtp
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2.2))
+                            : Text(_otpSent ? 'Resend' : 'Send code'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_otpSent) ...[
+                  const SizedBox(height: 12),
+                  EHTextField(
+                    controller: _otp,
+                    label: '6-digit verification code',
+                    icon: Icons.pin_rounded,
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   height: 52,

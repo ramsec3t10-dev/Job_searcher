@@ -36,6 +36,9 @@ _COMPRESSION_TARGET_TOKENS = 1500
 # Fraction of the context window above which oldest turns are summarised.
 _CONTEXT_TRUNCATE_RATIO = 0.8
 _EXPENSIVE_TIERS = ("sonnet", "opus")
+# Tasks that benefit from embedding-similarity caching: free-text inputs where
+# near-duplicates recur (a mentor question rephrased, the same job re-posted).
+_SEMANTIC_CACHE_TASKS = frozenset({TaskType.MENTORING, TaskType.DOMAIN_CLASSIFICATION})
 
 
 def _is_expensive(model_id: str) -> bool:
@@ -159,7 +162,7 @@ class AIRouter:
         user_content = messages[-1].get("content", "") if messages else ""
         cache_ttl = ttl_for(task)
         cacheable = use_cache and cache_ttl != 0
-        semantic_enabled = use_cache and task == TaskType.MENTORING
+        semantic_enabled = use_cache and task in _SEMANTIC_CACHE_TASKS
         key = SemanticCache.make_key(task, system, user_content)
 
         if cacheable:

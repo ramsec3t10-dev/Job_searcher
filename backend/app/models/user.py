@@ -12,7 +12,11 @@ class User(BaseModel):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True, index=True)
+    phone_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Bumped on every login/registration; tokens carry it so only the most
+    # recent sign-in per account (one person per mobile number) stays valid.
+    session_version: Mapped[int] = mapped_column(default=0, nullable=False)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     linkedin_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

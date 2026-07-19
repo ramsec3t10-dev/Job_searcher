@@ -74,8 +74,10 @@ class NotificationsController extends AsyncNotifier<List<AppNotification>> {
 
   void markAllRead() {
     final current = state.valueOrNull ?? const [];
+    // Optimistic locally, then persist server-side (fire-and-forget).
     state = AsyncValue.data(
         [for (final n in current) n.copyWith(read: true)]);
+    _api.post('/notifications/read-all').catchError((_) => null);
   }
 
   Future<List<AppNotification>> _fetch() async {

@@ -4,7 +4,7 @@ from app.llm.prompts.base import INT, STR, PromptTemplate, arr, obj
 
 QUESTION_GENERATOR = PromptTemplate(
     system_prompt=(
-        "Role: embedded systems interviewer. Generate interview questions for the given "
+        "Role: expert technical interviewer for the candidate's field. Generate interview questions for the given "
         "skill and company. type is one of conceptual, coding, design, behavioral. "
         "difficulty is easy, medium or hard. expected_answer_outline is a terse bullet "
         "outline. company_tags note why the question fits that company. "
@@ -31,7 +31,7 @@ QUESTION_GENERATOR = PromptTemplate(
 
 ANSWER_EVALUATOR = PromptTemplate(
     system_prompt=(
-        "Role: strict but fair embedded interview evaluator. Score the answer to the "
+        "Role: strict but fair interview evaluator for the candidate's field. Score the answer to the "
         "question. score, technical_accuracy, communication and depth are 0-100. feedback "
         "is direct and constructive. follow_up_question probes the weakest area. "
         "Output ONLY valid JSON:\n"
@@ -55,7 +55,7 @@ ANSWER_EVALUATOR = PromptTemplate(
 
 MOCK_INTERVIEW_OPENER = PromptTemplate(
     system_prompt=(
-        "Role: interviewer opening a company-specific mock interview for an embedded "
+        "Role: interviewer opening a company-specific mock interview for a "
         "engineer. Set a realistic tone matching the company. opening_message greets and "
         "frames the session. first_question starts easy to build rapport. interview_context "
         "notes round type and focus areas. Output ONLY valid JSON:\n"

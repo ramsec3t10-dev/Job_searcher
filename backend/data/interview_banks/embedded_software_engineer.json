@@ -1,0 +1,90 @@
+{
+ "domain_code": "embedded_engineering",
+ "subrole_code": "embedded_software_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the difference between a preemptive and cooperative RTOS scheduler.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe context-switch triggering and give a real-time responsiveness trade-off.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is priority inversion and how do RTOSes typically prevent it?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe the scenario and mention priority inheritance/ceiling protocols as the fix.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the AUTOSAR layered architecture (application, RTE, BSW, MCAL).",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should correctly describe the layering and how it enables hardware abstraction and reuse.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you debug an intermittent hard fault on an embedded target?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention stack overflow checks, memory corruption, and using a debugger/fault status registers systematically.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between CAN and LIN bus, and when would you use each?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention cost, speed, and topology differences with correct use-case reasoning.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain ISO 26262 ASIL levels and how they influence software development rigor.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should describe risk-based classification (QM to ASIL D) and how it drives testing/review requirements.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is a memory leak's equivalent risk in embedded C, given no garbage collector?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should discuss manual memory management risks, static allocation preference, and heap fragmentation.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time you had to debug a issue that only appeared in the field, not in testing.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for systematic root-causing under real production constraints (limited logging, hardware access).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between volatile and const in C, and when must you use volatile?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should correctly explain volatile's role in preventing compiler optimization on hardware/ISR-modified variables.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How does MISRA C improve safety in embedded code, and what's a rule you disagree with or find limiting?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should show real working knowledge of MISRA rules, not just 'it's a coding standard'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the boot sequence of an embedded system from power-on to application execution.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe bootloader stages, vector table setup, and jumping to application code.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you optimize an embedded application for low power consumption?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention sleep modes, clock gating, and minimizing active peripheral time.",
+   "source_type": "curated"
+  }
+ ]
+}

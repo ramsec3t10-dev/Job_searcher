@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "devops_sre_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the difference between rolling, blue-green, and canary deployment strategies.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe risk/rollback trade-offs for each, not just definitions.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What are SLIs, SLOs, and error budgets, and how do they relate?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should explain error budget as the allowed unreliability derived from the SLO, driving release-pace decisions.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Walk me through how you'd design a CI/CD pipeline for a microservices app.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover build/test/deploy stages, artifact versioning, and safe rollback mechanisms.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "A pod keeps getting OOMKilled in Kubernetes \u2014 how do you diagnose and fix it?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention checking resource requests/limits, memory profiling the app, and reviewing recent changes.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the benefit of Infrastructure as Code, and what problems can it still cause if misused?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention reproducibility/auditability, and drift or state-file conflicts as real risks.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Walk me through how you handled a major production incident, from detection to postmortem.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for a structured incident process: detection, mitigation, root cause, and blameless postmortem.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How does horizontal pod autoscaling decide when to scale, and what metric would you use?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention CPU/memory or custom metrics, and note that scaling on the wrong metric causes thrashing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you reduce alert fatigue for an on-call rotation?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention tuning alert thresholds, alerting on symptoms not causes, and escalation policies.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a container and a virtual machine?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should explain shared kernel vs. full OS virtualization clearly.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you approach zero-downtime database migrations?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention backward-compatible schema changes, phased rollout, and dual-write strategies where needed.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you automated away a recurring manual task.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for genuine toil reduction with a measurable time/error impact.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design a monitoring stack for a new service from scratch?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention metrics, structured logs, distributed tracing, and dashboards tied to real user impact.",
+   "source_type": "curated"
+  }
+ ]
+}

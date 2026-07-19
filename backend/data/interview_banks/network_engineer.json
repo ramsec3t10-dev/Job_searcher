@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "network_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the OSI model layers and give a real protocol example for each of the top 4 layers.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should correctly map layers to protocols (e.g. HTTP-application, TCP-transport, IP-network, Ethernet-datalink).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between TCP and UDP, and when would you use each?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should cover reliability/ordering trade-offs with concrete use cases (file transfer vs. video streaming).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain how BGP determines the best path between autonomous systems.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention path attributes and policy-based route selection, not just 'shortest path'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is a VLAN and why would you segment a network into multiple VLANs?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention broadcast domain isolation, security segmentation, and traffic management.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Walk me through troubleshooting a scenario where a user can't reach a specific website but other sites work fine.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should follow a structured process: DNS check, routing check, firewall/ACL check, isolating the failure point.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the DNS resolution process from typing a domain name to getting an IP address.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe recursive resolver, root/TLD/authoritative server steps correctly.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time you diagnosed an intermittent network outage.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for systematic use of monitoring tools and packet captures, not guesswork.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a stateful and stateless firewall?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should explain connection-tracking vs. rule-only filtering with an example of what each catches/misses.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a switch and a router?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a clear, correct distinction (layer 2 vs. layer 3 forwarding).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design network redundancy to avoid a single point of failure?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention redundant links, protocols like STP/HSRP/VRRP, and failover testing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain how a VPN provides secure remote access.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention tunneling and encryption, and distinguish site-to-site vs. remote-access VPNs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to explain a network issue to a non-technical stakeholder.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for genuine simplification skill and clear impact communication.",
+   "source_type": "curated"
+  }
+ ]
+}

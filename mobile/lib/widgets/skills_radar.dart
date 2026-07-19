@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// A labelled radar chart for a small set of categories (0–100 each).
 class SkillsRadar extends StatelessWidget {
@@ -44,7 +44,7 @@ class SkillsRadar extends StatelessWidget {
           getTitle: (index, angle) => RadarChartTitle(
             text: index < labels.length ? labels[index] : '',
           ),
-          titleTextStyle: EHType.caption(context.textSecondary),
+          titleTextStyle: EHType.caption.copyWith(color: context.textSecondary),
           dataSets: [
             RadarDataSet(
               dataEntries: entries,

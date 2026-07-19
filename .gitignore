@@ -27,3 +27,8 @@ mobile/.flutter-plugins-dependencies
 
 # Logs
 *.log
+# Signing material — never commit (rotate the keystore; it was in git history)
+upload-keystore.jks
+keystore.base64
+*.jks
+*.keystore

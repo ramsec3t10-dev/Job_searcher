@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// A company avatar. When [logoUrl] is provided it renders the cached network
 /// logo; otherwise it falls back to a deterministic gradient monogram. An
@@ -57,7 +57,7 @@ class CompanyAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         _initials,
-        style: EHType.cardTitle(Colors.white).copyWith(fontSize: size * 0.34),
+        style: EHType.h4.copyWith(color: Colors.white).copyWith(fontSize: size * 0.34),
       ),
     );
   }

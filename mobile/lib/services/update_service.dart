@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -86,36 +88,36 @@ class UpdateService {
       final info = await PackageInfo.fromPlatform();
       final currentCode = int.tryParse(info.buildNumber) ?? 0;
 
-      print("==========================================");
-      print("EMBEDHUNT UPDATE DEBUG");
-      print("Current Version : ${info.version}");
-      print("Current Build   : $currentCode");
-      print("API URL         : ${AppConfig.apiV1}/app/version");
+      debugPrint("==========================================");
+      debugPrint("EMBEDHUNT UPDATE DEBUG");
+      debugPrint("Current Version : ${info.version}");
+      debugPrint("Current Build   : $currentCode");
+      debugPrint("API URL         : ${AppConfig.apiV1}/app/version");
 
       final response = await _dio
           .get('${AppConfig.apiV1}/app/version')
           .timeout(AppConfig.requestTimeout);
 
-      print("Raw Response    : ${response.data}");
+      debugPrint("Raw Response    : ${response.data}");
 
       final server =
           AppVersion.fromJson(Map<String, dynamic>.from(response.data as Map));
 
-      print("Server Version  : ${server.latestVersion}");
-      print("Server Build    : ${server.versionCode}");
-      print("APK URL         : ${server.apkUrl}");
-      print("Force Update    : ${server.forceUpdate}");
+      debugPrint("Server Version  : ${server.latestVersion}");
+      debugPrint("Server Build    : ${server.versionCode}");
+      debugPrint("APK URL         : ${server.apkUrl}");
+      debugPrint("Force Update    : ${server.forceUpdate}");
 
       final hasUpdate = server.versionCode > currentCode;
 
-      print("Has Update      : $hasUpdate");
+      debugPrint("Has Update      : $hasUpdate");
 
       final isMandatory = hasUpdate &&
           (server.forceUpdate ||
               _isBefore(info.version, server.minimumVersion));
 
-      print("Mandatory       : $isMandatory");
-      print("==========================================");
+      debugPrint("Mandatory       : $isMandatory");
+      debugPrint("==========================================");
 
       return UpdateStatus(
         hasUpdate: hasUpdate,
@@ -124,11 +126,11 @@ class UpdateService {
         currentVersion: info.version,
       );
     } catch (e, s) {
-      print("==========================================");
-      print("UPDATE CHECK FAILED");
-      print(e);
-      print(s);
-      print("==========================================");
+      debugPrint("==========================================");
+      debugPrint("UPDATE CHECK FAILED");
+      debugPrint('$e');
+      debugPrint('$s');
+      debugPrint("==========================================");
 
       return UpdateStatus.none;
     }
@@ -157,14 +159,14 @@ class UpdateService {
     }
 
     try {
-      print("==========================================");
-      print("APK DOWNLOAD START");
-      print("URL : $apkUrl");
+      debugPrint("==========================================");
+      debugPrint("APK DOWNLOAD START");
+      debugPrint("URL : $apkUrl");
 
       final dir = await getTemporaryDirectory();
       final apkPath = '${dir.path}/embedhunt_update.apk';
 
-      print("Save Path : $apkPath");
+      debugPrint("Save Path : $apkPath");
 
       final dio = Dio(
         BaseOptions(
@@ -180,7 +182,7 @@ class UpdateService {
         onReceiveProgress: (received, total) {
           if (total > 0) {
             final progress = received / total;
-            print(
+            debugPrint(
                 "Download Progress : ${(progress * 100).toStringAsFixed(1)}%");
             onProgress(progress);
           }
@@ -192,31 +194,31 @@ class UpdateService {
         ),
       );
 
-      print("APK DOWNLOADED SUCCESSFULLY");
-      print("Saved To : $apkPath");
-      print("==========================================");
+      debugPrint("APK DOWNLOADED SUCCESSFULLY");
+      debugPrint("Saved To : $apkPath");
+      debugPrint("==========================================");
 
       return apkPath;
     } on DioException catch (e) {
-      print("==========================================");
-      print("DIO DOWNLOAD ERROR");
-      print("Status Code : ${e.response?.statusCode}");
-      print("Request URL : ${e.requestOptions.uri}");
-      print("Real URI    : ${e.response?.realUri}");
-      print("Headers     : ${e.response?.headers}");
-      print("Response    : ${e.response?.data}");
-      print("Message     : ${e.message}");
-      print("Error       : ${e.error}");
-      print("==========================================");
+      debugPrint("==========================================");
+      debugPrint("DIO DOWNLOAD ERROR");
+      debugPrint("Status Code : ${e.response?.statusCode}");
+      debugPrint("Request URL : ${e.requestOptions.uri}");
+      debugPrint("Real URI    : ${e.response?.realUri}");
+      debugPrint("Headers     : ${e.response?.headers}");
+      debugPrint("Response    : ${e.response?.data}");
+      debugPrint("Message     : ${e.message}");
+      debugPrint("Error       : ${e.error}");
+      debugPrint("==========================================");
 
       onError(e.toString());
       return null;
     } catch (e, s) {
-      print("==========================================");
-      print("UNKNOWN DOWNLOAD ERROR");
-      print(e);
-      print(s);
-      print("==========================================");
+      debugPrint("==========================================");
+      debugPrint("UNKNOWN DOWNLOAD ERROR");
+      debugPrint('$e');
+      debugPrint('$s');
+      debugPrint("==========================================");
 
       onError(e.toString());
       return null;

@@ -20,6 +20,27 @@ class ProfileService:
         except Exception:
             return CandidateProfile()
 
+    async def domain_block(self, user_id: str) -> dict:
+        """Additive domain-aware profile block (Phase 4). Reads the classified
+        primary/secondary domains and per-domain structured data written during
+        resume parsing. Empty dict when the candidate has no domain profile."""
+        from sqlalchemy import select
+        from app.domains.catalog import code_for_domain_id
+        from app.models.profile import CandidateProfile
+        row = (await self.db.execute(select(CandidateProfile).where(
+            CandidateProfile.user_id == user_id))).scalar_one_or_none()
+        if row is None:
+            return {}
+        dpd = row.domain_profile_data or {}
+        primary = code_for_domain_id(row.primary_domain_id)
+        levels = {c: v.get("profiling_level") for c, v in dpd.items() if isinstance(v, dict)}
+        return {
+            "primary": primary,
+            "secondary": [c for c in (code_for_domain_id(i) for i in (row.secondary_domain_ids or [])) if c],
+            "profiling_level": levels.get(primary, "full") if primary else None,
+            "domain_profile_data": dpd,
+        }
+
     async def get_profile_dict(self, user_id: str) -> dict:
         profile = await self.get_candidate_profile(user_id)
         return {
@@ -30,6 +51,7 @@ class ProfileService:
             "current_company": profile.current_company,
             "is_embedded_engineer": profile.is_embedded_engineer,
             "embedded_domain_score": profile.embedded_domain_score,
+            "domain": await self.domain_block(user_id),
             "skills": {
                 "programming": profile.programming_languages,
                 "rtos_os": profile.rtos_and_os,

@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "mobile_developer",
+ "questions": [
+  {
+   "question_text": "Explain the app lifecycle on your primary platform and how you handle state during backgrounding.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should show understanding of lifecycle callbacks and saving/restoring state correctly.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you design an app to work well with intermittent or no connectivity?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention local caching, optimistic UI updates, and sync-on-reconnect strategies.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you diagnose and fix a memory leak in a mobile app?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention profiling tools (Android Profiler/Instruments) and common leak sources like retained contexts/closures.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you manage state in a Flutter or React Native app at scale?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should discuss a chosen state management approach and why, with trade-offs acknowledged.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you reduce app startup time?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention lazy initialization, reducing main-thread work at launch, and measuring with real profiling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do push notifications work end-to-end on your platform?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe the device token registration, push service (FCM/APNs), and app-side handling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to support both Android and iOS with limited resources.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for prioritization reasoning and awareness of platform-specific trade-offs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you handle secure local storage of sensitive data (tokens, credentials)?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention Keychain/Keystore usage, not storing secrets in plain SharedPreferences/UserDefaults.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a native app, a hybrid app, and a cross-platform framework app?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a clear, correct distinction with examples of each.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you structure automated testing for a mobile app (unit, widget/UI, integration)?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should show a sensible testing pyramid adapted for mobile constraints.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe how you handled a critical crash reported in production.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for use of crash reporting tools, triage process, and hotfix/rollback strategy.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you optimize battery usage for an app that needs background location updates?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention adaptive location accuracy, batching updates, and platform-specific background limits.",
+   "source_type": "curated"
+  }
+ ]
+}

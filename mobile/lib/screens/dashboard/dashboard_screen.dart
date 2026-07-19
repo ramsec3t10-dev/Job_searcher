@@ -6,11 +6,13 @@ import 'package:intl/intl.dart';
 import '../../models/dashboard.dart';
 import '../../models/job.dart';
 import '../../state/auth_controller.dart';
+import '../../state/prefs_controller.dart';
 import '../../state/content_controllers.dart';
 import '../../state/dashboard_controller.dart';
 import '../../state/notifications_controller.dart';
 import '../../theme/colors.dart';
 import '../../theme/eh_context.dart';
+import '../../theme/haptics.dart';
 import '../../theme/spacing.dart';
 import '../../theme/typography.dart';
 import '../../widgets/animated_counter.dart';
@@ -34,6 +36,13 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(dashboardControllerProvider);
     final user = ref.watch(authControllerProvider).valueOrNull;
+    final alias = ref.watch(aliasProvider);
+    // First sign-in: ask what to call them, exactly once.
+    if (alias == null && user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) _askAlias(context, ref, user.firstName);
+      });
+    }
     final twin = ref.watch(careerTwinControllerProvider).valueOrNull;
     final unread = ref.watch(unreadCountProvider);
 
@@ -60,7 +69,7 @@ class DashboardScreen extends ConsumerWidget {
                 ref.read(dashboardControllerProvider.notifier).refresh(),
             child: CustomScrollView(
               slivers: [
-                _appBar(context, user?.firstName ?? 'there', unread),
+                _appBar(context, alias ?? user?.firstName ?? 'there', unread),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -91,6 +100,38 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  static bool _aliasDialogShown = false;
+
+  Future<void> _askAlias(
+      BuildContext context, WidgetRef ref, String fallback) async {
+    if (_aliasDialogShown) return;
+    _aliasDialogShown = true;
+    final controller = TextEditingController(text: fallback);
+    final name = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('How should I call you?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Your name or nickname'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text("That's me"),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    ref
+        .read(aliasProvider.notifier)
+        .set((name ?? '').trim().isEmpty ? fallback : name!.trim());
+  }
+
   Widget _appBar(BuildContext context, String name, int unread) {
     final date = DateFormat('EEEE, d MMM').format(DateTime.now());
     return SliverAppBar(
@@ -117,6 +158,17 @@ class DashboardScreen extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                     style: EHType.caption.copyWith(color: context.textMuted)),
               ],
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'AI Career Mentor',
+            child: IconButton(
+              icon: const Icon(Icons.smart_toy_outlined, color: EHColor.brand),
+              onPressed: () {
+                EHHaptic.select();
+                context.push('/mentor');
+              },
             ),
           ),
           _IconBadge(

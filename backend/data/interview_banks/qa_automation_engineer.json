@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "qa_automation_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the test pyramid and why too many end-to-end tests is a problem.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe the unit/integration/e2e balance and note e2e tests are slow and flaky at scale.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you design test cases for a feature with no formal spec?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention boundary value analysis, equivalence partitioning, and clarifying ambiguity with stakeholders.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you handle flaky tests in a CI pipeline?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss root-causing (timing/race conditions, test isolation) rather than just retrying or skipping.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between smoke testing, regression testing, and exploratory testing?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give clear, distinct definitions and when each is used in a release cycle.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design an automated test suite for a REST API?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover status codes, schema validation, auth scenarios, and negative/edge cases, not just happy-path checks.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a critical bug you found that others missed \u2014 how did you find it?",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for a systematic testing approach, not luck, and how it changed the team's process.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you decide what to automate vs. keep manual/exploratory?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should weigh repetition frequency, stability of the feature, and ROI of automation effort.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What makes a good bug report?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should include reproduction steps, expected vs. actual behavior, environment details, and severity.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you performance-test an API endpoint before a major traffic event?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention load vs. stress vs. soak testing and identifying the actual bottleneck, not just hitting it with traffic.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time QA and engineering disagreed on release readiness.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for data-driven advocacy and a collaborative resolution, not just 'I blocked the release'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you integrate automated tests into a CI/CD pipeline without slowing releases down?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention parallelization, tiered test suites (fast smoke tests gate merge, full suite gates release).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between mocking and stubbing in test design?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give a precise distinction with an example of when each is appropriate.",
+   "source_type": "curated"
+  }
+ ]
+}

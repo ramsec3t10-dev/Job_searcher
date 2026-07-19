@@ -12,6 +12,7 @@ _CORPUS_FIELDS = (
     "title", "company", "company_tier", "location", "source_portal",
     "source_url", "apply_url", "description", "required_skills",
     "experience_min", "experience_max", "salary_min_lpa", "salary_max_lpa",
+    "domain_id", "industry",
 )
 
 

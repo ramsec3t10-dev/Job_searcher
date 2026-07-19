@@ -62,7 +62,7 @@ def generate_interview_kit(job_title: str, company: str, matched_skills: list[st
 
 async def generate_interview_kit_ai(
     job_title: str, company: str, matched_skills: list[str], match_score: int,
-    *, db, user_id: str,
+    *, db, user_id: str, domain_code: str | None = None,
 ) -> InterviewKit:
     """Static ``generate_interview_kit`` enriched with company-specific AI questions.
 
@@ -70,6 +70,13 @@ async def generate_interview_kit_ai(
     static). The kit shape is unchanged. Any failure or the master toggle being
     off returns the static kit unchanged.
     """
+    # Sales / finance interviews are behavioural + case-study, not coding — route
+    # them to their purpose-built kit. Embedded and software/IT keep the existing
+    # technical path (byte-identical for embedded).
+    from app.interview.domain_kits import build_domain_kit, has_domain_kit
+    if domain_code and has_domain_kit(domain_code):
+        return build_domain_kit(domain_code, job_title, company, matched_skills, match_score)
+
     kit = generate_interview_kit(job_title, company, matched_skills, match_score)
     if not settings.LLM_ENRICHMENT_ENABLED:
         logger.info("interview_generator_path", path="fallback", reason="disabled")

@@ -1,62 +1,7 @@
-# EMBEDHUNT AI — Local / staging stack: API + Postgres + Redis
-# Usage (from repo root):
-#   docker compose -f deployment/docker/docker-compose.yml up --build
-version: "3.9"
+{
+  "name": "read_file",
+  "arguments": {
+    "filepath": "src/main.py"
+  }
+}
 
-services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-embedhunt}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-embedhunt}
-      POSTGRES_DB: ${POSTGRES_DB:-embedhunt}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-embedhunt}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redisdata:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  api:
-    build:
-      context: ../..
-      dockerfile: deployment/docker/Dockerfile.backend
-    env_file:
-      - ../../backend/.env
-    environment:
-      APP_ENV: ${APP_ENV:-production}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-embedhunt}:${POSTGRES_PASSWORD:-embedhunt}@db:5432/${POSTGRES_DB:-embedhunt}
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/1
-      CELERY_RESULT_BACKEND: redis://redis:6379/2
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-prod-minimum-32-characters!!}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
-
-volumes:
-  pgdata:
-  redisdata:

@@ -13,6 +13,7 @@ Everything is deterministic and offline. Each question is a dict with keys:
 """
 from __future__ import annotations
 
+from app.interview.company_bank import COMPANY_QUESTIONS
 from app.interview.question_bank import QUESTIONS as _CURATED_BY_SKILL
 
 # ── Curated additions (distinct, real questions) ─────────────────────────────
@@ -119,30 +120,77 @@ _SYSTEM_DESIGN: list[dict] = [
 ]
 
 
+# Answer frameworks for the non-technical categories — real coaching, not filler.
+_STAR_GUIDE = (
+    "Structure with STAR and keep it concrete. Situation: one sentence of context "
+    "with real constraints (deadline, team size, what was at stake). Task: what YOU "
+    "were responsible for — not the team. Action: 3-4 specific decisions you made and "
+    "why, including one trade-off you weighed; this is 60% of the answer. Result: a "
+    "measurable outcome (shipped on date, cut boot time 40%, zero field returns) plus "
+    "one honest lesson. Under 2 minutes. Pick engineering stories with real tension — "
+    "a bug found late, a spec that changed, a decision made with incomplete data — "
+    "and never cast a teammate as the villain."
+)
+_HR_GUIDE = (
+    "Answer honestly, briefly, and tie it back to the role. Do the research first: "
+    "know the company's product domain and say specifically what attracts you about "
+    "the work itself (their bus architecture, their safety culture, their scale) — "
+    "not perks. For salary: give a researched range anchored to market data for the "
+    "role and location, and let them speak first where possible. For 'why leaving': "
+    "one neutral, forward-looking sentence (growth, domain change) — never criticism "
+    "of the current employer. Every answer under a minute; rambling reads as evasion."
+)
+_DESIGN_GUIDE = (
+    "Run a visible process — the interviewer grades the process, not the boxes. "
+    "1) Requirements: pull out functional needs AND constraints (power budget, "
+    "latency deadlines, cost, safety level, update path) — ask clarifying questions "
+    "before drawing anything. 2) Architecture: name the major components and the "
+    "data flow between them; justify the split. 3) Deep-dive one hard part (the "
+    "scheduler, the storage format, the comms protocol) with real numbers — bus "
+    "load, memory budget, timing. 4) Failure modes: what happens on power loss, a "
+    "stuck sensor, a full buffer — and how the design detects and degrades. 5) "
+    "Trade-offs: state what you gave up and what alternative you'd pick if a "
+    "constraint changed. Saying 'I would measure X before deciding' scores points."
+)
+
+
 def _build() -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
 
-    def _add(q: str, skill: str, category: str, qtype: str, difficulty: str, expected: str) -> None:
+    def _add(q: str, skill: str, category: str, qtype: str, difficulty: str,
+             expected: str, rich: dict | None = None) -> None:
         key = q.strip().lower()
         if key in seen:
             return
         seen.add(key)
-        out.append({
+        entry = {
             "id": f"q{len(out) + 1:04d}",
             "q": q, "skill": skill, "category": category,
             "type": qtype, "difficulty": difficulty, "expected": expected,
-        })
+        }
+        # Carry the training payload (model answers, follow-ups, red flags)
+        # through from the curated bank when present.
+        if rich:
+            for k in ("model_answer", "follow_ups", "red_flags"):
+                if rich.get(k):
+                    entry[k] = rich[k]
+        out.append(entry)
 
     # 1. curated (original bank)
     for skill, items in _CURATED_BY_SKILL.items():
         for it in items:
             _add(it["q"], skill, "curated", it.get("type", "core"),
-                 it.get("difficulty", "medium"), it.get("expected", ""))
+                 it.get("difficulty", "medium"), it.get("expected", ""), rich=it)
     # curated extras
     for it in _CURATED_EXTRA:
         _add(it["q"], it["skill"], "curated", it.get("type", "core"),
-             it.get("difficulty", "medium"), it.get("expected", ""))
+             it.get("difficulty", "medium"), it.get("expected", ""), rich=it)
+
+    # company-asked (real questions reported from tier-1 silicon interviews)
+    for it in COMPANY_QUESTIONS:
+        _add(it["q"], it["skill"], "company_asked", it.get("type", "core"),
+             it.get("difficulty", "medium"), it.get("expected", ""), rich=it)
 
     # 2. templated coverage
     for skill, category in _CORE_SKILLS:
@@ -154,12 +202,16 @@ def _build() -> list[dict]:
     # 3. behavioural / HR / system design
     for it in _BEHAVIORAL:
         _add(it["q"], "behavioral", "behavioral", "behavioral", it["difficulty"],
-             "STAR: situation, task, action, result.")
+             "STAR: situation, task, action, result.",
+             rich={"model_answer": _STAR_GUIDE, "follow_ups": ["What would you do differently today?", "What was the measurable outcome?"]})
     for it in _HR:
-        _add(it["q"], "hr", "hr", "hr", it["difficulty"], "Honest, structured, company-aligned answer.")
+        _add(it["q"], "hr", "hr", "hr", it["difficulty"],
+             "Honest, structured, company-aligned answer.",
+             rich={"model_answer": _HR_GUIDE})
     for it in _SYSTEM_DESIGN:
         _add(it["q"], "system design", "system_design", "system_design", it["difficulty"],
-             "Requirements, constraints, components, trade-offs, failure modes.")
+             "Requirements, constraints, components, trade-offs, failure modes.",
+             rich={"model_answer": _DESIGN_GUIDE, "follow_ups": ["What is the single point of failure in your design?", "How does it degrade when a component fails or the load doubles?"]})
     return out
 
 

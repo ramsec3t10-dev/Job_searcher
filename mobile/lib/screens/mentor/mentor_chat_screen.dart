@@ -4,9 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/mentor_controller.dart';
 import '../../theme/colors.dart';
 import '../../theme/eh_context.dart';
+import '../../theme/haptics.dart';
 import '../../theme/typography.dart';
 import '../../widgets/ai_typing_indicator.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/typewriter_text.dart';
+
+const _starterPrompts = <String>[
+  'What should I learn next to raise my match scores?',
+  'How do I explain a career gap in interviews?',
+  'Am I underpaid for my current role?',
+];
 
 class MentorChatScreen extends ConsumerStatefulWidget {
   const MentorChatScreen({super.key});
@@ -24,11 +32,60 @@ class _MentorChatScreenState extends ConsumerState<MentorChatScreen> {
     super.dispose();
   }
 
-  void _send() {
-    final text = _input.text.trim();
+  void _send([String? preset]) {
+    final text = (preset ?? _input.text).trim();
     if (text.isEmpty) return;
+    EHHaptic.confirm();
     ref.read(mentorControllerProvider.notifier).send(text);
     _input.clear();
+  }
+
+  Widget _starters(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Expanded(
+          child: EHEmptyState(
+            emoji: '💬',
+            title: 'Ask your mentor anything',
+            message:
+                'Career advice, interview prep, salary negotiation — your AI mentor knows your profile.',
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              for (final p in _starterPrompts)
+                Semantics(
+                  button: true,
+                  label: 'Ask: $p',
+                  child: InkWell(
+                    onTap: () => _send(p),
+                    borderRadius: BorderRadius.circular(100),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: EHColor.brand.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                            color: EHColor.brand.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(p,
+                          style: EHType.captionB
+                              .copyWith(color: EHColor.brand)),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -76,19 +133,15 @@ class _MentorChatScreenState extends ConsumerState<MentorChatScreen> {
         children: [
           Expanded(
             child: messages.isEmpty
-                ? const EHEmptyState(
-                    emoji: '💬',
-                    title: 'Ask your mentor anything',
-                    message:
-                        'Career advice, interview prep, salary negotiation — your AI mentor knows your profile.',
-                  )
+                ? _starters(context)
                 : ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.all(16),
                     itemCount: messages.length,
                     itemBuilder: (context, i) {
                       final msg = messages[messages.length - 1 - i];
-                      return _Bubble(message: msg);
+                      // Only the newest assistant reply types itself in.
+                      return _Bubble(message: msg, animate: i == 0);
                     },
                   ),
           ),
@@ -145,8 +198,9 @@ class _MentorChatScreenState extends ConsumerState<MentorChatScreen> {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message});
+  const _Bubble({required this.message, this.animate = false});
   final MentorMessage message;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -190,9 +244,16 @@ class _Bubble extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: context.divider),
               ),
-              child: Text(message.text,
-                  style: EHType.bodySM.copyWith(
-                      color: context.textPrimary, height: 1.5)),
+              child: isUser
+                  ? Text(message.text,
+                      style: EHType.bodySM.copyWith(
+                          color: context.textPrimary, height: 1.5))
+                  : TypewriterText(
+                      message.text,
+                      animate: animate,
+                      style: EHType.bodySM.copyWith(
+                          color: context.textPrimary, height: 1.5),
+                    ),
             ),
           ),
         ],

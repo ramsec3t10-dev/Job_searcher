@@ -25,6 +25,7 @@ async def generate_mock(payload: dict = Body(default={}), user_id: str = Depends
         count=int(payload.get("count", 10) or 10),
         company=payload.get("company", ""),
         job_title=payload.get("job_title", "Mock Interview"),
+        fmt=payload.get("format", "adaptive"),
     )
 
 @router.post("/mock/{session_id}/evaluate", summary="Score mock interview answers")

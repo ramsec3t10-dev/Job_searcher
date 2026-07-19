@@ -9,6 +9,7 @@ import '../../state/jobs_controller.dart';
 import '../../state/saved_jobs_controller.dart';
 import '../../theme/colors.dart';
 import '../../theme/eh_context.dart';
+import '../../theme/haptics.dart';
 import '../../theme/typography.dart';
 import '../../widgets/company_avatar.dart';
 import '../../widgets/eh_card.dart';
@@ -91,21 +92,49 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
 
   Widget _searchBar(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: TextField(
-          controller: _search,
-          onChanged: (v) => setState(() => _query = v),
-          style: EHType.bodyMD.copyWith(color: context.textPrimary),
-          decoration: InputDecoration(
-            hintText: 'Search roles or companies',
-            prefixIcon: const Icon(Icons.search_rounded, size: 20),
-            filled: true,
-            fillColor: context.cardElevated,
-            isDense: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                style: EHType.bodyMD.copyWith(color: context.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Search roles or companies',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  filled: true,
+                  fillColor: context.cardElevated,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Semantics(
+              button: true,
+              label: 'Quick triage — swipe through new matches',
+              child: InkWell(
+                onTap: () {
+                  EHHaptic.select();
+                  context.push('/jobs/triage');
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: EHColor.brandGrad,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.style_rounded,
+                      color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ],
         ),
       );
 
@@ -130,7 +159,10 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
       );
 
   Widget _chip(String label, bool selected, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          EHHaptic.select();
+          onTap();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(

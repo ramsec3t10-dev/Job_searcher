@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/update_service.dart';
-import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/eh_context.dart';
+import '../theme/typography.dart';
 
 enum _UpdateState { idle, downloading, installing, error }
 
@@ -53,7 +55,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
     return PopScope(
       canPop: !widget.isMandatory && !_busy,
       child: AlertDialog(
-        backgroundColor: AppTheme.card,
+        backgroundColor: context.cardElevated,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.all(24),
         content: Column(
@@ -64,7 +66,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
             if (widget.newVersion.releaseNotes.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text("WHAT'S NEW",
-                  style: AppText.label.copyWith(color: AppTheme.textMuted)),
+                  style: EHType.labelMD.copyWith(color: context.textMuted)),
               const SizedBox(height: 6),
               ...widget.newVersion.releaseNotes.map(
                 (note) => Padding(
@@ -73,12 +75,12 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(Icons.check_circle,
-                          size: 16, color: AppTheme.success),
+                          size: 16, color: EHColor.success),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(note,
-                            style: AppText.body
-                                .copyWith(color: AppTheme.textSecondary)),
+                            style: EHType.bodySM
+                                .copyWith(color: context.textSecondary)),
                       ),
                     ],
                   ),
@@ -103,11 +105,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: AppTheme.brand.withValues(alpha: 0.15),
+            color: EHColor.brand.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child:
-              const Icon(Icons.system_update, color: AppTheme.brand, size: 26),
+              const Icon(Icons.system_update, color: EHColor.brand, size: 26),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -117,9 +119,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
             children: [
               Text('Update available',
                   style:
-                      AppText.cardTitle.copyWith(color: AppTheme.textPrimary)),
+                      EHType.h4.copyWith(color: context.textPrimary)),
               Text('v${widget.newVersion.latestVersion}',
-                  style: AppText.caption.copyWith(color: AppTheme.brand)),
+                  style: EHType.caption.copyWith(color: EHColor.brand)),
             ],
           ),
         ),
@@ -127,11 +129,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: AppTheme.danger.withValues(alpha: 0.15),
+              color: EHColor.danger.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text('REQUIRED',
-                style: AppText.label.copyWith(color: AppTheme.danger)),
+                style: EHType.labelMD.copyWith(color: EHColor.danger)),
           ),
       ],
     );
@@ -151,20 +153,20 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   child: LinearProgressIndicator(
                     value: _progress,
                     minHeight: 8,
-                    backgroundColor: AppTheme.brand.withValues(alpha: 0.15),
-                    valueColor: const AlwaysStoppedAnimation(AppTheme.brand),
+                    backgroundColor: EHColor.brand.withValues(alpha: 0.15),
+                    valueColor: const AlwaysStoppedAnimation(EHColor.brand),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Text('${(_progress * 100).toInt()}%',
-                  style: AppText.caption.copyWith(
-                      color: AppTheme.brand, fontWeight: FontWeight.w700)),
+                  style: EHType.caption.copyWith(
+                      color: EHColor.brand, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 8),
           Text('Downloading update… keep the app open',
-              style: AppText.caption.copyWith(color: AppTheme.textMuted)),
+              style: EHType.caption.copyWith(color: context.textMuted)),
         ],
       ),
     );
@@ -180,11 +182,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
             height: 16,
             child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(AppTheme.brand)),
+                valueColor: AlwaysStoppedAnimation(EHColor.brand)),
           ),
           const SizedBox(width: 10),
           Text('Installing update…',
-              style: AppText.body.copyWith(color: AppTheme.textSecondary)),
+              style: EHType.bodySM.copyWith(color: context.textSecondary)),
         ],
       ),
     );
@@ -196,16 +198,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppTheme.dangerLight,
+          color: EHColor.danger.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: AppTheme.danger, size: 16),
+            const Icon(Icons.error_outline, color: EHColor.danger, size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(_error!,
-                  style: AppText.caption.copyWith(color: AppTheme.danger)),
+                  style: EHType.caption.copyWith(color: EHColor.danger)),
             ),
           ],
         ),
@@ -232,10 +234,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 (_state == _UpdateState.idle || _state == _UpdateState.error)
                     ? _start
                     : null,
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.brand),
+            style: FilledButton.styleFrom(backgroundColor: EHColor.brand),
             child: Text(
               _state == _UpdateState.error ? 'Retry' : 'Update now',
-              style: AppText.buttonLabel.copyWith(color: Colors.white),
+              style: EHType.button.copyWith(color: Colors.white),
             ),
           ),
         ),

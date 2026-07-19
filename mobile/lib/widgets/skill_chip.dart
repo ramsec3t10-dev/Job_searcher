@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
 import '../theme/spacing.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// Visual state of a [SkillChip].
 enum SkillChipVariant { matched, missing, neutral, learning, selected }
@@ -80,7 +80,7 @@ class SkillChip extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: EHType.caption(c.fg).copyWith(fontWeight: FontWeight.w600),
+              style: EHType.caption.copyWith(color: c.fg).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ],

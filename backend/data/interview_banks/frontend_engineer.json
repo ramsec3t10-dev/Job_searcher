@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "frontend_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the virtual DOM and why it improves rendering performance.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should explain diffing/reconciliation, not just 'it's faster'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between controlled and uncontrolled components in React?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should tie the answer to where form state lives and give a concrete example.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you optimize a page with a large, slow-rendering list?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention windowing/virtualization, memoization, and avoiding unnecessary re-renders.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain the CSS box model and common flexbox vs. grid use cases.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should distinguish 1D (flexbox) vs. 2D (grid) layout problems with examples.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What are Web Vitals (LCP, CLS, INP) and why do they matter?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should connect each metric to a real user-perceived performance problem.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you handle state management in a large React application?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss local vs. global state, when to reach for a state library vs. context, and trade-offs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is debouncing vs. throttling, and when would you use each?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give a concrete UI example for each \u2014 e.g. search input debounce vs. scroll-handler throttle.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you make a data-heavy dashboard accessible to screen reader users?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention ARIA roles, keyboard navigation, and semantic HTML, not just alt text.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to push back on a design that wasn't technically feasible.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for concrete collaboration with design/product, not just complaining about designers.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between == and === in JavaScript?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should explain type coercion clearly with an example.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Design a component library that's reused across multiple product teams.",
+   "category": "system_design",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover versioning, theming/design tokens, and backward compatibility strategy.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time a performance issue turned out to be caused by something unexpected.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for real debugging methodology \u2014 profiling tools used, not guesswork.",
+   "source_type": "curated"
+  }
+ ]
+}

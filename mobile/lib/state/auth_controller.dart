@@ -33,12 +33,22 @@ class AuthController extends AsyncNotifier<User?> {
     });
   }
 
+  /// Sends a registration OTP. Returns the dev code when the backend runs
+  /// without an SMS provider (local/dev), else null.
+  Future<String?> requestOtp(String phone) async {
+    final data = await _api.post('/auth/otp/request',
+        auth: false, body: {'phone': phone}) as Map<String, dynamic>;
+    return data['dev_code'] as String?;
+  }
+
   Future<void> register({
     required String email,
     required String username,
     required String password,
     required String firstName,
     required String lastName,
+    required String phone,
+    required String otpCode,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -48,6 +58,8 @@ class AuthController extends AsyncNotifier<User?> {
         'password': password,
         'first_name': firstName,
         'last_name': lastName,
+        'phone': phone,
+        'otp_code': otpCode,
       }) as Map<String, dynamic>;
       await _api.saveTokens(
           data['access_token'] as String, data['refresh_token'] as String);

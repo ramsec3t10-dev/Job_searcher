@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "backend_engineer",
+ "questions": [
+  {
+   "question_text": "Explain the difference between SQL and NoSQL databases and when you'd choose each.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should cover consistency vs. flexibility trade-offs, schema rigidity, and give a concrete use case for each.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How does HTTPS/TLS secure data in transit between client and server?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention the TLS handshake, cipher suite negotiation, and certificate verification, not just 'it encrypts data'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is database indexing and how does it affect read vs. write performance?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should explain B-tree indexing, faster reads at the cost of slower writes and extra storage.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Design a rate limiter for a public API. What algorithms would you consider?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss token bucket vs. sliding window, distributed rate-limiting via Redis, and trade-offs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design a URL shortener service?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover ID generation (base62/hashing), read-heavy caching strategy, and collision handling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain idempotency and why it matters for payment or retry-prone APIs.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should define idempotent operations and describe idempotency keys for safe retries.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do virtual threads (e.g. in Java) change concurrency patterns vs. traditional thread pools?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss lightweight concurrency, reduced context-switch overhead, and where they still don't help (CPU-bound work).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Design a highly available payment webhook processor.",
+   "category": "system_design",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover at-least-once delivery, deduplication, dead-letter queues, and retry backoff.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between horizontal and vertical scaling?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give clear definitions and a real trade-off (cost, complexity, single point of failure).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a production bug you owned end-to-end.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for STAR structure: how it was detected, root-caused, fixed, and what monitoring was added after.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you approach diagnosing a service that is randomly timing out under load?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention checking connection pool exhaustion, GC pauses, downstream dependency latency, and tracing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a system design decision where you traded consistency for availability, or vice versa.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for CAP theorem understanding applied to a real scenario, not just textbook recitation.",
+   "source_type": "curated"
+  }
+ ]
+}

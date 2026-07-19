@@ -13,6 +13,7 @@ import '../../widgets/eh_progress_bar.dart';
 import '../../widgets/eh_skeleton.dart';
 import '../../widgets/score_ring.dart';
 import '../../widgets/skill_chip.dart';
+import '../../widgets/skills_radar.dart';
 import '../common/screen_helpers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -53,6 +54,8 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       _scores(context, twin),
                       const SizedBox(height: 12),
+                      _radar(context, twin),
+                      const SizedBox(height: 12),
                       _skills(context, twin),
                       const SizedBox(height: 12),
                       _experience(context, twin),
@@ -89,6 +92,30 @@ class ProfileScreen extends ConsumerWidget {
           cell('Career', twin.intv('career_score')),
           cell('Interview', twin.intv('interview_readiness')),
           cell('Market', twin.intv('market_value')),
+        ],
+      ),
+    );
+  }
+
+  /// The Career Twin at a glance: five readiness dimensions on one radar.
+  Widget _radar(BuildContext context, Map<String, dynamic>? twin) {
+    final values = <String, double>{
+      'Career': twin.intv('career_score').toDouble(),
+      'Interview': twin.intv('interview_readiness').toDouble(),
+      'Market': twin.intv('market_value').toDouble(),
+      'Resume': twin.intv('resume_score').toDouble(),
+      'Profile': twin.intv('profile_completeness').toDouble(),
+    };
+    if (values.values.every((v) => v <= 0)) return const SizedBox.shrink();
+    return EHCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Career Radar',
+              style: EHType.h4.copyWith(color: context.textPrimary)),
+          const SizedBox(height: 8),
+          SkillsRadar(values: values, size: 220),
         ],
       ),
     );

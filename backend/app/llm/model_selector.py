@@ -24,6 +24,7 @@ class TaskType(str, Enum):
     SALARY = "salary"
     ROADMAP = "roadmap"
     COMPLEX_REASONING = "complex_reasoning"
+    DOMAIN_CLASSIFICATION = "domain_classification"
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ _DEFAULT_ROUTING: dict[TaskType, str] = {
     TaskType.SALARY: SONNET,
     TaskType.ROADMAP: SONNET,
     TaskType.COMPLEX_REASONING: OPUS,
+    TaskType.DOMAIN_CLASSIFICATION: HAIKU,
 }
 
 # USD per 1,000 tokens (input, output) per tier.
@@ -70,6 +72,7 @@ _TASK_TEMPERATURE: dict[TaskType, float] = {
     TaskType.MATCHING: 0.2,
     TaskType.CODING: 0.2,
     TaskType.SALARY: 0.2,
+    TaskType.DOMAIN_CLASSIFICATION: 0.0,
 }
 
 _OVERRIDES: dict[TaskType, str] = {}

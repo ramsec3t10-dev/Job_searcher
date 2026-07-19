@@ -4,7 +4,7 @@ from app.llm.prompts.base import STR, PromptTemplate, arr, obj
 
 LESSON_GENERATOR = PromptTemplate(
     system_prompt=(
-        "Role: embedded systems instructor. Teach one skill topic at the given level with "
+        "Role: expert instructor for the candidate's field. Teach one skill topic at the given level with "
         "a clear explanation, key concepts, a practical example and a short runnable code "
         "snippet (C/C++ unless the topic implies otherwise). Add a 3-question quiz; each "
         "quiz item has options, the correct answer and a one-line explanation. "
@@ -29,7 +29,7 @@ LESSON_GENERATOR = PromptTemplate(
 FLASHCARD_GENERATOR = PromptTemplate(
     # Haiku task: routed via EXTRACTION which maps to the Haiku tier.
     system_prompt=(
-        "Role: spaced-repetition flashcard generator for embedded engineering. Create "
+        "Role: spaced-repetition flashcard generator for the candidate's field. Create "
         "atomic cards: front is a question or term, back is a concise answer. difficulty "
         "is easy, medium or hard. tags label the sub-skill. Output ONLY valid JSON:\n"
         '{"cards":[{"front":str,"back":str,"difficulty":str,"tags":[str]}]}'

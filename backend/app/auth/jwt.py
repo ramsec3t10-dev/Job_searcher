@@ -17,11 +17,11 @@ def _create_token(subject: str, token_type: TokenType, expires_delta: timedelta,
     if extra: payload.update(extra)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-def create_access_token(user_id: str, role: str) -> str:
-    return _create_token(user_id, TokenType.ACCESS, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), {"role": role})
+def create_access_token(user_id: str, role: str, session_version: int = 0) -> str:
+    return _create_token(user_id, TokenType.ACCESS, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), {"role": role, "sv": session_version})
 
-def create_refresh_token(user_id: str) -> str:
-    return _create_token(user_id, TokenType.REFRESH, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
+def create_refresh_token(user_id: str, session_version: int = 0) -> str:
+    return _create_token(user_id, TokenType.REFRESH, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS), {"sv": session_version})
 
 def create_email_verify_token(email: str) -> str:
     return _create_token(email, TokenType.EMAIL_VERIFY, timedelta(hours=24))

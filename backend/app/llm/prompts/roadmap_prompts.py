@@ -4,7 +4,7 @@ from app.llm.prompts.base import INT, STR, PromptTemplate, arr, obj
 
 ROADMAP_GENERATOR = PromptTemplate(
     system_prompt=(
-        "Role: learning architect for embedded engineers. Build a week-by-week roadmap "
+        "Role: learning architect for the candidate's field. Build a week-by-week roadmap "
         "that closes the candidate's gaps toward the target role, respecting available "
         "hours and learning velocity. Each week targets one skill/topic with concrete "
         "activities, a checkpoint to prove mastery and a projected readiness score (0-100). "

@@ -1,7 +1,7 @@
 """EMBEDHUNT AI — Discovered Job model (persisted live-pipeline corpus)."""
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import BaseModel
@@ -13,6 +13,13 @@ class DiscoveredJob(BaseModel):
     # stable per-source identity: "{source_portal}:{external_id}"
     external_ref: Mapped[str] = mapped_column(String(300), nullable=False, unique=True, index=True)
     dedup_key: Mapped[str] = mapped_column(String(400), nullable=False, index=True)
+    # Multi-domain (Phase 1): every posting is domain-tagged; existing rows
+    # backfilled to embedded_engineering by the data migration.
+    domain_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("job_domains.id"), nullable=True, index=True)
+    # Company/posting industry when the source provides it (Phase 2). Distinct
+    # from domain_id: a software company can post a sales role.
+    industry: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
 
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     company: Mapped[str] = mapped_column(String(200), nullable=False)

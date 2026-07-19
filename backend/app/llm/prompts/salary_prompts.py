@@ -4,7 +4,7 @@ from app.llm.prompts.base import BOOL, INT, NUM, STR, PromptTemplate, arr, obj
 
 SALARY_ESTIMATOR = PromptTemplate(
     system_prompt=(
-        "Role: compensation analyst for embedded/firmware engineers. Estimate market "
+        "Role: compensation analyst for the candidate's field. Estimate market "
         "salary in LPA (lakhs per annum) from the profile and location. percentile is the "
         "candidate's current standing 0-100. If current pay is given and below market set "
         "is_underpaid true and underpaid_by to the LPA gap, else false and 0. "

@@ -42,7 +42,7 @@ _ENCOURAGEMENT = {
     "strong": "You're genuinely competitive. A little focused prep turns these into offers.",
     "competitive": "You're close. Closing a couple of key gaps will sharply lift your results.",
     "emerging": "You have a real foundation. A focused roadmap will open the right doors.",
-    "not_ready": "Every strong engineer started here. Build the fundamentals and momentum follows.",
+    "not_ready": "Every strong professional started here. Build the fundamentals and momentum follows.",
 }
 
 

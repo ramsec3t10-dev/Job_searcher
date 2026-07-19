@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/eh_context.dart';
-import '../theme/typography_legacy.dart';
+import '../theme/typography.dart';
 
 /// Animated circular score ring with a count-up number in the centre.
 class ScoreRing extends StatelessWidget {
@@ -52,7 +52,7 @@ class ScoreRing extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Text(
                         '${(value * 100).round()}',
-                        style: EHType.scoreDisplay(context.textPrimary)
+                        style: EHType.scoreDisplay.copyWith(color: context.textPrimary)
                             .copyWith(fontSize: size * 0.30),
                       ),
                     ),
@@ -63,7 +63,7 @@ class ScoreRing extends StatelessWidget {
                         label!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: EHType.label(context.textMuted)
+                        style: EHType.labelMD.copyWith(color: context.textMuted)
                             .copyWith(fontSize: size * 0.085),
                       ),
                     ),

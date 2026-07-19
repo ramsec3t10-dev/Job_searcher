@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "data_scientist",
+ "questions": [
+  {
+   "question_text": "How would you design an A/B test for a new feature, end to end?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should cover hypothesis definition, sample size/power calculation, randomization, and guardrail metrics.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain p-value and a common misinterpretation of it.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give the correct statistical definition and flag the common 'probability the null is true' misconception.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "A metric moved significantly after a launch \u2014 how do you determine if it's causal?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss confounders, seasonality, and structured causal analysis vs. just correlation.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Write a SQL query (verbally describe) to find the second-highest salary per department.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should reason through window functions (RANK/DENSE_RANK) or a correlated subquery approach.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between correlation and causation, with a business example?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give a concrete example (e.g. ice cream sales and drowning) and explain the confound.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you detect and handle data leakage in a predictive model?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should describe checking for target-derived features, time-based leakage, and proper train/test splitting.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time your analysis changed a business decision.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for a concrete story with a measurable outcome, not just 'I made a dashboard'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you choose which metric to optimize when multiple stakeholders want different things?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should show framing around a North Star metric plus guardrails, and stakeholder alignment process.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between a left join and an inner join?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a clear, correct explanation with an example.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you handle missing data in a dataset before modeling?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should discuss multiple approaches (imputation, dropping, flagging) and when each is appropriate.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a time you had to explain a complex analysis to a non-technical stakeholder.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for genuine simplification skill, not just 'I used simpler words'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design an experiment when random assignment isn't possible?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention quasi-experimental methods like diff-in-diff or matching.",
+   "source_type": "curated"
+  }
+ ]
+}

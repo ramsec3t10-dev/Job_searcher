@@ -16,6 +16,7 @@ from app.job_sources.base import JobSource
 from app.job_sources.greenhouse import GreenhouseSource
 from app.job_sources.lever import LeverSource
 from app.job_sources.remoteok import RemoteOkSource
+from app.job_sources.smartrecruiters import SmartRecruitersSource
 
 # (board_token, display_name, company_tier)
 GREENHOUSE_BOARDS: list[tuple[str, str, str]] = [
@@ -33,6 +34,16 @@ LEVER_COMPANIES: list[tuple[str, str, str]] = [
     ("plaid", "Plaid", "tier1_software"),
 ]
 
+# (company_identifier, display_name, company_tier) — SmartRecruiters-hosted
+# boards spanning many industries (retail, hospitality, health, sales) so
+# discovery reaches well beyond engineering. Identifiers are the public company
+# slugs used in jobs.smartrecruiters.com URLs; unknown ones fail per-source.
+SMARTRECRUITERS_COMPANIES: list[tuple[str, str, str]] = [
+    ("Ubisoft2", "Ubisoft", "tier2_gaming"),
+    ("Bosch", "Bosch", "tier1_automotive"),
+    ("Visa", "Visa", "tier1_finance"),
+]
+
 
 def default_sources() -> list[JobSource]:
     """Build the curated default set of legitimate discovery sources."""
@@ -41,5 +52,7 @@ def default_sources() -> list[JobSource]:
         sources.append(GreenhouseSource(token, name, tier))
     for slug, name, tier in LEVER_COMPANIES:
         sources.append(LeverSource(slug, name, tier))
+    for cid, name, tier in SMARTRECRUITERS_COMPANIES:
+        sources.append(SmartRecruitersSource(cid, name, tier))
     sources.append(RemoteOkSource())
     return sources

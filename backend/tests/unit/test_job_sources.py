@@ -107,13 +107,15 @@ class TestSchemaHelpers:
         assert d["id"] == "greenhouse:acme:1"
         assert isinstance(d["required_skills"], str)
 
-    def test_relevance_excludes_sales(self):
-        p = JobPosting(
+    def test_relevance_keeps_all_domains(self):
+        # Multi-domain (Phase 2): non-engineering roles are now KEPT and tagged
+        # by the classifier downstream — no longer filtered out at ingestion.
+        sales = JobPosting(
             external_id="1", title="Account Executive", company="Acme",
             location="Remote", apply_url="u", description="Sell things",
             source_portal="x", source_url="u",
         )
-        assert p.is_relevant() is False
+        assert sales.is_relevant() is True
 
     def test_relevance_includes_engineer(self):
         p = JobPosting(
@@ -122,6 +124,15 @@ class TestSchemaHelpers:
             source_portal="x", source_url="u",
         )
         assert p.is_relevant() is True
+
+    def test_relevance_drops_invalid(self):
+        # Structurally invalid rows (missing title/company) are still dropped.
+        p = JobPosting(
+            external_id="1", title="", company="",
+            location="Remote", apply_url="u", description="x",
+            source_portal="x", source_url="u",
+        )
+        assert p.is_relevant() is False
 
 
 # ── connectors ───────────────────────────────────────────────────────────────
@@ -180,11 +191,11 @@ class TestAggregator:
             "remoteok.com/api": REMOTEOK_PAYLOAD,
         })
 
-    def test_discovers_and_filters(self):
+    def test_discovers_all_domains(self):
         result = discover(sources=self._all_sources(), fetcher=self._fetcher())
         titles = {p.title for p in result.postings}
-        # Sales role filtered out; three engineering roles kept.
-        assert "Account Executive" not in titles
+        # Multi-domain: the sales role is now KEPT alongside engineering roles.
+        assert "Account Executive" in titles
         assert "Senior Embedded Software Engineer" in titles
         assert "Linux Kernel Engineer" in titles
         assert "Embedded Firmware Engineer" in titles
@@ -205,8 +216,11 @@ class TestAggregator:
             GreenhouseSource("acme", "Acme", "tier1_software"),
         ]
         result = discover(sources=dup, fetcher=self._fetcher())
-        # Same company+title from both sources collapses to one.
-        assert len(result.postings) == 1
+        # The two identical boards each return the same 2 distinct postings;
+        # dedup collapses them to those 2 unique (company, title) pairs.
+        assert len(result.postings) == 2
+        keys = [p.dedup_key for p in result.postings]
+        assert len(keys) == len(set(keys))   # no duplicates survive
 
     def test_failed_source_is_isolated(self):
         class Boom(JobSource):

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/colors.dart';
+import '../theme/haptics.dart';
 import '../theme/motion.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
@@ -34,6 +35,7 @@ class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   void _onTap(int index) {
+    EHHaptic.select();
     navigationShell.goBranch(
       index,
       // Tapping the active tab returns it to its root.
@@ -91,50 +93,55 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final active = EHColor.brand;
+    const active = EHColor.brand;
     final inactive = isDark ? EHColor.darkTxt3 : const Color(0xFF9A9AB5);
     final color = selected ? active : inactive;
 
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: EHRadius.LG,
-        splashColor: EHColor.brand.withValues(alpha: 0.10),
-        highlightColor: Colors.transparent,
-        child: AnimatedContainer(
-          duration: EHMotion.fast,
-          curve: EHMotion.smooth,
-          padding: const EdgeInsets.symmetric(
-              vertical: EHSpace.xs, horizontal: EHSpace.xs),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: EHMotion.fast,
-                curve: EHMotion.smooth,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: EHSpace.md, vertical: EHSpace.xxs + 4),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? EHColor.brand.withValues(alpha: 0.12)
-                      : Colors.transparent,
-                  borderRadius: EHRadius.FULL,
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: '${item.label} tab',
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: EHRadius.LG,
+          splashColor: EHColor.brand.withValues(alpha: 0.10),
+          highlightColor: Colors.transparent,
+          child: AnimatedContainer(
+            duration: EHMotion.fast,
+            curve: EHMotion.smooth,
+            padding: const EdgeInsets.symmetric(
+                vertical: EHSpace.xs, horizontal: EHSpace.xs),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: EHMotion.springWindow,
+                  curve: selected ? EHMotion.springSnappy : EHMotion.smooth,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: EHSpace.md, vertical: EHSpace.xxs + 4),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? EHColor.brand.withValues(alpha: 0.12)
+                        : Colors.transparent,
+                    borderRadius: EHRadius.FULL,
+                  ),
+                  child: Icon(
+                    selected ? item.activeIcon : item.icon,
+                    size: 22,
+                    color: color,
+                  ),
                 ),
-                child: Icon(
-                  selected ? item.activeIcon : item.icon,
-                  size: 22,
-                  color: color,
+                const SizedBox(height: 3),
+                Text(
+                  item.label,
+                  style: EHType.colored(
+                    selected ? EHType.labelMD : EHType.caption,
+                    color,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                item.label,
-                style: EHType.colored(
-                  selected ? EHType.labelMD : EHType.caption,
-                  color,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

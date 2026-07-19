@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "full_stack_engineer",
+ "questions": [
+  {
+   "question_text": "Walk me through how you'd design and build a feature from database to UI.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should show ownership across layers: schema design, API contract, frontend consumption, and testing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "REST vs. GraphQL \u2014 when would you pick one over the other?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should cover over/under-fetching, caching complexity, and team familiarity as real trade-offs.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you keep frontend and backend API contracts in sync as both evolve?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention OpenAPI/schema-first design, versioning, and contract testing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design authentication for a full-stack app (session vs. token-based)?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should compare cookie/session auth vs. JWT, and mention refresh-token handling.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "A feature works locally but fails in production \u2014 how do you debug across the stack?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should describe a systematic approach: logs, environment diffs, network tab, and reproducing with prod-like data.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to make a trade-off between shipping fast and doing it right.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for a reasoned decision with awareness of technical debt incurred, not just 'I shipped fast'.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you approach testing a full-stack feature \u2014 what layers do you test and how?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention unit, integration, and end-to-end tests with a sensible pyramid, not 100% e2e.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you structure a monorepo for a full-stack app with shared types?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should discuss shared type generation, build tooling, and CI considerations.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What happens between typing a URL and seeing a rendered page?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should cover DNS resolution, TCP/TLS handshake, HTTP request, server response, and rendering.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a cross-team project where you had to align frontend, backend, and product.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for communication and scoping skills, not just technical execution.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you handle environment configuration across dev/staging/production?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should mention environment variables, secrets management, and avoiding hardcoded config.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Design a notification system that spans backend events and real-time frontend updates.",
+   "category": "system_design",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should cover WebSockets/SSE vs. polling, and how backend events trigger delivery.",
+   "source_type": "curated"
+  }
+ ]
+}

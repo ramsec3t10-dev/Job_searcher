@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     BCRYPT_ROUNDS: int = 12
 
+    # ── Phone OTP registration ──────────────────────────────────────────
+    # When True, registration requires a mobile number verified via OTP.
+    # SMS delivery uses Twilio when creds are set; otherwise (dev) the code
+    # is returned in the API response as `dev_code`.
+    OTP_REQUIRED: bool = True
+    OTP_TTL_SECONDS: int = 300
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_FROM_NUMBER: Optional[str] = None
+
     CORS_ORIGINS: List[str] = ["http://localhost:3000","http://localhost:8080"]
 
     @field_validator("CORS_ORIGINS", mode="before")

@@ -17,16 +17,69 @@ class RecommendationService:
         self.db = db
         self.profile_svc = ProfileService(db)
         self.app_repo = ApplicationRepository(db)
+        self._scoring_cache = None
+
+    async def _scoring_context(self, user_id: str):
+        """Load the domain-aware scoring registry (cached per request) and the
+        candidate's declared target domain codes. Fails soft to (None, None) so
+        matching always works even if the taxonomy isn't seeded."""
+        if self._scoring_cache is None:
+            try:
+                from app.recommendation.scoring_config import load_scoring_configs
+                self._scoring_cache = await load_scoring_configs(self.db)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("scoring_config_load_failed", error=str(exc))
+                self._scoring_cache = {}
+        targets: set[str] = set()
+        try:
+            from sqlalchemy import select as _select
+            from app.domains.catalog import code_for_domain_id
+            from app.models.profile import CandidateProfile
+            row = (await self.db.execute(_select(CandidateProfile).where(
+                CandidateProfile.user_id == user_id))).scalar_one_or_none()
+            if row:
+                for did in [row.primary_domain_id, *(row.secondary_domain_ids or [])]:
+                    code = code_for_domain_id(did)
+                    if code:
+                        targets.add(code)
+        except Exception:  # noqa: BLE001
+            pass
+        return (self._scoring_cache or None), (targets or None)
+
+    async def _apply_learned_boost(self, user_id: str, result) -> None:
+        """The learning loop, v1: every swipe/save/apply the user made becomes
+        a bounded per-user boost. Company affinity ±3, skill affinity up to ±2,
+        so learned preference re-orders near-ties without drowning real fit."""
+        try:
+            from app.services.feedback_service import FeedbackService
+            aff = await FeedbackService(self.db).get_affinities(user_id)
+        except Exception:
+            return
+        skill_aff = aff.get("skills") or aff.get("skill_affinity") or {}
+        company_aff = aff.get("companies") or aff.get("company_affinity") or {}
+        if not skill_aff and not company_aff:
+            return
+        for job in result.jobs:
+            boost = 3.0 * float(company_aff.get(job.company.lower(), 0.0))
+            skills = [s.lower() for s in job.match.matched_skills[:6]]
+            if skills:
+                boost += 2.0 * (
+                    sum(float(skill_aff.get(s, 0.0)) for s in skills) / len(skills))
+            job.match_score = int(max(0, min(99, job.match_score + round(boost))))
+        result.jobs.sort(key=lambda j: j.match_score, reverse=True)
 
     async def get_recommendations(self, user_id: str, min_score: int = 40, salary_min: float = 15.0) -> dict:
         profile = await self.profile_svc.get_candidate_profile(user_id)
-        result = run_matching(profile, min_score, salary_min)
+        scoring, targets = await self._scoring_context(user_id)
+        result = run_matching(profile, min_score, salary_min, scoring=scoring, target_domains=targets)
+        await self._apply_learned_boost(user_id, result)
         logger.info("recommendations_generated", user_id=user_id, qualified=result.total_qualified, auto=result.auto_apply_count)
         return self._serialize_result(result)
 
     async def get_job_gaps(self, user_id: str, job_id: str) -> dict:
         profile = await self.profile_svc.get_candidate_profile(user_id)
-        result = run_matching(profile, min_score=0, salary_min=0)
+        scoring, targets = await self._scoring_context(user_id)
+        result = run_matching(profile, min_score=0, salary_min=0, scoring=scoring, target_domains=targets)
         job = next((j for j in result.jobs if j.job_id == job_id), None)
         if not job: raise HTTPException(404, f"Job {job_id} not found")
         g = job.gap
@@ -46,7 +99,8 @@ class RecommendationService:
         from app.repositories.resume_repository import ResumeRepository
         resume = await ResumeRepository(self.db).get_primary(user_id)
         profile = await self.profile_svc.get_candidate_profile(user_id)
-        result = run_matching(profile, min_score=0, salary_min=0)
+        scoring, targets = await self._scoring_context(user_id)
+        result = run_matching(profile, min_score=0, salary_min=0, scoring=scoring, target_domains=targets)
         job = next((j for j in result.jobs if j.job_id == job_id), None)
         if not job: raise HTTPException(404, f"Job {job_id} not found in corpus")
         from app.recommendation.matcher import compute_match
@@ -89,11 +143,15 @@ class RecommendationService:
         }
 
     def _serialize_job(self, j: RankedJob) -> dict:
+        from app.domains.catalog import code_for_domain_id, flatten
+        dcode = code_for_domain_id(getattr(j, "domain_id", None))
+        dname = next((d.name for d in flatten() if d.code == dcode), None) if dcode else None
         return {
             "rank": j.rank, "job_id": j.job_id, "title": j.title,
             "company": j.company, "company_tier": j.company_tier,
             "location": j.location, "source_portal": j.source_portal,
             "source_url": j.source_url, "apply_url": j.apply_url,
+            "domain_code": dcode, "domain_name": dname,
             "salary_min_lpa": j.salary_min_lpa, "salary_max_lpa": j.salary_max_lpa,
             "meets_salary": j.meets_salary,
             "match_score": j.match_score, "match_tier": j.match_tier.value,

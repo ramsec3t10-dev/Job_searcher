@@ -13,27 +13,6 @@ from dataclasses import dataclass, field
 
 from app.resume.extractor import extract_skills
 
-# Title keywords that mark a posting as in-scope for EMBEDHUNT's audience.
-# Deliberately broad (the product must not restrict itself to predefined roles)
-# but specific enough to exclude clearly-unrelated postings (sales, HR, etc.).
-_ROLE_KEYWORDS = (
-    "embedded", "firmware", "software", "engineer", "developer", "linux",
-    "kernel", "driver", "rtos", "bsp", "yocto", "platform", "system",
-    "autosar", "automotive", "adas", "ecu", "middleware", "fpga", "asic",
-    "verification", "validation", "robotics", "mechatronics", "dsp",
-    "signal processing", "control systems", "compiler", "toolchain", "edge ai",
-    "embedded ai", "machine learning", "ml ", "ai ", "mlops", "devops",
-    "cloud", "backend", "c++", "c programmer", "python", "rust", "architect",
-    "technical lead", "principal", "staff",
-)
-
-# Non-engineering roles to actively exclude even if a generic keyword matches.
-_EXCLUDE_KEYWORDS = (
-    "sales", "account executive", "recruiter", "human resources", " hr ",
-    "marketing", "customer success", "accountant", "legal counsel",
-    "administrative", "receptionist", "intern, marketing",
-)
-
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 _YEARS_RE = re.compile(r"(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?years?", re.IGNORECASE)
@@ -81,6 +60,11 @@ class JobPosting:
     experience_min: int | None = None
     experience_max: int | None = None
     required_skills: list[str] = field(default_factory=list)
+    # Company/posting industry when the source provides it (Phase 2). Distinct
+    # from the classified domain — a software firm can post a sales role.
+    industry: str | None = None
+    # Domain set by the ingestion pipeline's classifier before persistence.
+    domain_id: str | None = None
 
     def __post_init__(self) -> None:
         self.title = (self.title or "").strip()
@@ -98,15 +82,11 @@ class JobPosting:
         return f"{self.company.lower()}::{self.title.lower()}"
 
     def is_relevant(self) -> bool:
-        """Keep only engineering/software postings relevant to the audience."""
-        haystack = f"{self.title} {self.location}".lower()
-        if any(bad in haystack for bad in _EXCLUDE_KEYWORDS):
-            return False
-        if any(kw in haystack for kw in _ROLE_KEYWORDS):
-            return True
-        # Fall back to skill signal: a posting with real embedded/software
-        # skills in its body is relevant even with an unusual title.
-        return len(self.required_skills) >= 3
+        """Validity gate for multi-domain discovery. EMBEDHUNT now serves every
+        job domain, so postings are no longer filtered by role/industry here —
+        the domain classifier tags each posting and per-user relevance is applied
+        downstream at match time. We only drop structurally invalid rows."""
+        return bool(self.title) and bool(self.company)
 
     def to_corpus_dict(self) -> dict:
         """Map to the recommendation engine's corpus schema."""
@@ -125,4 +105,6 @@ class JobPosting:
             "experience_max": self.experience_max,
             "salary_min_lpa": self.salary_min_lpa,
             "salary_max_lpa": self.salary_max_lpa,
+            "domain_id": self.domain_id,
+            "industry": self.industry,
         }

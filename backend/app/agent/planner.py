@@ -107,7 +107,7 @@ def build_plan(
             title="Strengthen your profile",
             detail=(
                 f"Readiness {insights.readiness_score}/99. Add depth on "
-                f"{', '.join(insights.top_skill_gaps[:3]) or 'core embedded skills'} "
+                f"{', '.join(insights.top_skill_gaps[:3]) or 'your core target skills'} "
                 f"and quantify project impact to unlock more roles."
             ),
             confidence=0.6,

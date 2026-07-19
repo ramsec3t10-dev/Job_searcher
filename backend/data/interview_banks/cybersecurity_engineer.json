@@ -1,0 +1,90 @@
+{
+ "domain_code": "software_it",
+ "subrole_code": "cybersecurity_engineer",
+ "questions": [
+  {
+   "question_text": "Explain SQL injection and how to prevent it.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should describe the attack mechanism and mandate parameterized queries/prepared statements as the fix, not just input sanitization.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between symmetric and asymmetric encryption, and where is each used?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should give correct definitions and real use cases (TLS handshake uses both, for example).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Walk me through how you'd threat-model a new feature before it ships.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention identifying assets, trust boundaries, and using a structured framework like STRIDE.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "A server is showing signs of compromise \u2014 walk me through your incident response.",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should follow a structured process: identify, contain, eradicate, recover, and document lessons learned.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Explain cross-site scripting (XSS) and the difference between stored and reflected XSS.",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should distinguish persistence of the payload and give a mitigation (output encoding, CSP).",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How would you design a zero-trust network architecture?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should mention 'never trust, always verify', micro-segmentation, and continuous authentication.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Describe a vulnerability you found and how you responsibly disclosed or remediated it.",
+   "category": "behavioral",
+   "difficulty": "senior",
+   "model_answer_guideline": "Look for a structured, ethical process \u2014 not war stories that suggest reckless testing.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the OWASP Top 10 and why does it matter for engineering teams, not just security teams?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should name several categories correctly and connect it to secure coding practices, not just a checklist.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What's the difference between authentication and authorization?",
+   "category": "technical",
+   "difficulty": "junior",
+   "model_answer_guideline": "Should give a clear, correct distinction with an example.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "How do you balance security requirements against developer velocity in a fast-moving team?",
+   "category": "technical",
+   "difficulty": "senior",
+   "model_answer_guideline": "Should show pragmatic judgment \u2014 e.g. shifting security left with tooling, not blocking every release manually.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "What is a man-in-the-middle attack and how does TLS prevent it?",
+   "category": "technical",
+   "difficulty": "mid",
+   "model_answer_guideline": "Should explain certificate validation and the handshake's role in preventing interception.",
+   "source_type": "curated"
+  },
+  {
+   "question_text": "Tell me about a time you had to convince a team to fix a security issue they didn't see as urgent.",
+   "category": "behavioral",
+   "difficulty": "mid",
+   "model_answer_guideline": "Look for risk communication skill \u2014 translating technical risk into business impact.",
+   "source_type": "curated"
+  }
+ ]
+}
